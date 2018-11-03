@@ -4,8 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index",
-    "heroku-postbuild": "cd client && yarn && yarn build"
+    "start": "node index"
   },
   "keywords": [],
   "author": "",
