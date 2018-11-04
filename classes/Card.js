@@ -1,12 +1,12 @@
 // const lands = ["heart", "diamond", "club", "spade"];
 const lands = ["S", "C", "H", "D"];
+const landUnicodes = ["♠", "♣", "♥", "♦"];
 const numbers = ["A",2,3,4,5,6,7,8,9,10,"J","Q","K"];
 const colors = {
     black:"black",
     red:"red"
 };
 const landNos = [1,2,4,8];
-// "S"=1, "C":2, "H":4, "D":8 
 const imageFormat = '.png'; 
 class Card {
     constructor(landId, numberId){
@@ -19,6 +19,8 @@ class Card {
         this.value = numberId === 0 ? 14 : (numberId + 1);
         this.enabled = true;
         this.landNo = landNos[landId];
+        this.landIcon = landUnicodes[landId];
+        this.cardNo = this.getCardNo()
     }
 
     getCard(){
@@ -28,8 +30,13 @@ class Card {
             id:this.id,
             selected:this.selected,
             land:this.land,
-            enabled:this.enabled
+            enabled:this.enabled,
+            cardNo:this.cardNo
         }
+    }
+
+    getCardNo(){
+        return `${this.number.replace('10', 'T')}${this.land.toLowerCase()}`
     }
 
     toggleSelected(){

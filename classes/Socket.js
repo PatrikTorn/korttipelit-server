@@ -4,6 +4,7 @@ const {getRooms, getSockets, sockets, rooms, rankPokerHand} = require('../common
 class Socket {
     constructor(socket){
         this.socket = socket;
+        this.name = ["Juho", "Patu", "Hene", "Teemu", "Kalle", "Ile"][Math.floor(Math.random()*5)]
         this.room = rooms.lobby;
         this.rooms = socket.rooms;
         this.id = this.socket.id;
@@ -12,19 +13,33 @@ class Socket {
         this.cardsChanged = false;
         this.cardTabled = false;
         this.points = 0;
+        this.firstTableCard = null;
+        this.shouldRevealHand = false;
     }
 
     getSocket(){
         return {
             room:this.room.name,
+            name:this.name,
             id:this.id,
             cards:this.cards,
             table:this.table,
             cardsChanged:this.cardsChanged,
             cardTabled:this.cardTabled,
             points:this.points,
-            hand:this.getHand()
+            hand:this.getHand(),
+            firstTableCard:this.firstTableCard,
+            shouldRevealHand:this.shouldRevealHand
         }
+    }
+
+    revealHand(){
+        this.shouldRevealHand = true;
+        this.broadcastGame();
+    }
+
+    hideHand(){
+        this.shouldRevealHand = false;
     }
 
     getHand(){
@@ -40,6 +55,7 @@ class Socket {
     disableCardsChanged(){
         this.cardsChanged = false;
         this.table = [];
+        this.firstTableCard = null;
     }
 
     addPoints(points){
@@ -93,15 +109,20 @@ class Socket {
     }
 
     tableCard(card){
-        const givenCard = this.findCard(card);
-        this.table.push(givenCard);
-        if(!this.room.land){
-            this.room.setLand(card.land);
+        if(card){
+            const givenCard = this.findCard(card);
+            this.firstTableCard = givenCard;
+            this.table.push(givenCard);
+            if(!this.room.land){
+                this.room.setLand(card.land);
+            }
+            this.room.setLeader(this.id, card);
+            this.deleteCard(givenCard);
+            this.cardTabled = true;
+            this.cards.map(card => card.enableCard());
+        }else{
+            this.firstTableCard = card;
         }
-        this.room.setLeader(this.id, card);
-        this.deleteCard(givenCard);
-        this.cardTabled = true;
-        this.cards.map(card => card.enableCard());
     }
 
     receiveCard(){
@@ -147,10 +168,6 @@ class Socket {
 
     broadcastGame(){
         io.sockets.in(this.room.name).emit('get game', this.room.getRoom())
-    }
-
-    broadcastRoundEnd(winners){
-        io.sockets.in(this.room.name).emit('end round', winners)
     }
 }
 

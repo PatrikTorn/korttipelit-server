@@ -1,5 +1,7 @@
 const Room = require('./classes/Room');
 const Queue = require('./classes/Queue');
+const PokerSolver = require('pokersolver').Hand;
+
 
 sockets = {};
 rooms = {
@@ -20,52 +22,54 @@ function getSockets(){
     return Object.values(sockets).map(socket => socket.getSocket())
 }
 
+const hands=[
+    {
+        name:"Neloset",
+        points:7
+    },
+    {
+        name:"Värisuora",
+        points:8
+    }, 
+    {
+        name:"Suora",
+        points:4
+    },
+    {
+        name:"Väri",
+        points:5
+    }, 
+    {
+        name:"Hai",
+        points:1
+    },
+    {
+        name:"Pari",
+        points:2
+    },
+    {
+        name:"Kaksi paria",
+        points:3
+    },
+    {
+        name:"Kuningasvärisuora",
+        points:9
+    },
+    {
+        name:"Kolmoset",
+        points:4
+    },
+    {
+        name:"Täyskäsi",
+        points:6
+    }
+];
+
 function rankPokerHand(cards){
     const cs = cards.map(card => card.value);
     const ss = cards.map(card => card.landNo);
     // https://www.codeproject.com/Articles/569271/A-Poker-hand-analyzer-in-JavaScript-using-bit-math
-    const hands=[
-        {
-            name:"4 of a Kind",
-            points:7
-        },
-        {
-            name:"Straight Flush",
-            points:8
-        }, 
-        {
-            name:"Straight",
-            points:4
-        },
-        {
-            name:"Flush",
-            points:5
-        }, 
-        {
-            name:"High Card",
-            points:1
-        },
-        {
-            name:"1 Pair",
-            points:2
-        },
-        {
-            name:"2 Pair",
-            points:3
-        },
-        {
-            name:"Royal Flush",
-            points:9
-        },
-        {
-            name:"3 of a Kind",
-            points:4
-        },
-        {
-            name:"Full House",
-            points:6
-        }
-    ];
+
     // [10, J, Q, K, A], [ _["♠"], _["♠"], _["♠"], _["♠"], _["♠"] ] 
     var v, i, o, s = 1<<cs[0]|1<<cs[1]|1<<cs[2]|1<<cs[3]|1<<cs[4];
     for (i=-1, v=o=0; i<5; i++, o=Math.pow(2,cs[i]*4)) {v += o*((v/o&15)+1);}
@@ -73,6 +77,7 @@ function rankPokerHand(cards){
     v -= (ss[0] == (ss[1]|ss[2]|ss[3]|ss[4])) * ((s == 0x7c00) ? -5 : 1);
     return hands[v];
 }
+
 
 module.exports = {
     sockets,

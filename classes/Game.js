@@ -1,23 +1,23 @@
 const Room = require('./Room');
 const Card = require('./Card');
-const {rankPokerHand} = require('../common');
+const PokerSolver = require('pokersolver').Hand;
 
 class Game extends Room {
     constructor(name, players, playersAmount){
         super(name, players, playersAmount);
         this.playersAmount = playersAmount;
-        this.deck = [];
-        this.trash = [];
         this.cards = [];
         this.turn = Object.keys(players)[0];
-        this.round = 0;
         this.shuffleDeck();
         this.land = null;
         this.leader = {
             playerId:null,
             cardValue:null
         }
-        this.revealHand = false;
+        this.tikkiStarted = false;
+        this.tikkiRoundWinner = null;
+        this.tikkiWinner = null;
+        this.pokerWinner = null;
     }
 
     getRoom(){
@@ -28,14 +28,42 @@ class Game extends Room {
             cards:this.cards,
             players:this.formatPlayers(),
             turn:this.turn,
-            round:this.round,
             land:this.land,
-            revealHand:this.revealHand
+            tikkiStarted:this.tikkiStarted,
+            tikkiRoundWinner:this.tikkiRoundWinner,
+            tikkiWinner:this.tikkiWinner && this.tikkiWinner.getSocket(),
+            pokerWinner:this.pokerWinner && this.pokerWinner.getSocket()
         }
     }
 
-    toggleRevealHand(){
-        this.revealHand = !this.revealHand;
+    getPokerWinner(){
+        let handz = [];
+        for(let player in this.players){
+            const thisPlayer = this.players[player];
+            const hand = PokerSolver.solve(thisPlayer.getHand().hand.map(card => card.cardNo));
+            hand.owner = thisPlayer.id;
+            handz.push(hand);
+        }
+        const winner = PokerSolver.winners(handz)[0].owner;
+        return this.players[winner];
+    }
+    
+
+    revealHands(){
+        const thisPlayers = Object.values(this.players);
+        thisPlayers.map((player, i) => {
+            setTimeout(() => {
+                player.revealHand()
+            }, i * 5000)
+        });
+    }
+
+    hideHands(){
+        const thisPlayers = Object.values(this.players);
+        thisPlayers.map(player => {
+            player.hideHand();
+        })
+        thisPlayers[0].broadcastGame();
     }
 
     findCard(card){
@@ -83,22 +111,22 @@ class Game extends Room {
 
     getWinner(){
         const thisPlayers = Object.values(this.players);
-        const tikkiWinner = this.players[this.leader.playerId];
+        this.tikkiWinner = this.players[this.leader.playerId];
 
         let tikkiPoints;
         if(this.leader.cardValue === 1) tikkiPoints = 4;
         else tikkiPoints = 2;
-        tikkiWinner.addPoints(tikkiPoints)
+        this.tikkiWinner.addPoints(tikkiPoints)
 
-        const allPoints = thisPlayers.map(player => player.hand.points);
-        const bestPoints = Math.max(...allPoints);
-        const pokerWinners = thisPlayers
-            .filter(player => player.hand.points === bestPoints)
-            .map(player => {player.addPoints(player.hand.points); return player.getSocket()});
-        this.toggleRevealHand();
-        tikkiWinner.broadcastRoundEnd({pokerWinners, tikkiWinner:tikkiWinner.getSocket()});
-        tikkiWinner.broadcastGame();
-        return {tikkiWinner, pokerWinners}
+        // const allPoints = thisPlayers.map(player => player.hand.points);
+        // const bestPoints = Math.max(...allPoints);
+        // this.pokerWinners = thisPlayers
+        //     .filter(player => player.hand.points === bestPoints)
+        //     .map(player => {player.addPoints(player.hand.points); return player});
+        this.pokerWinner = this.getPokerWinner();
+        this.pokerWinner.addPoints(this.pokerWinner.hand.points);
+        this.tikkiWinner.broadcastGame();
+        this.revealHands();
     }
 
     setNextTurn(){
@@ -108,17 +136,23 @@ class Game extends Room {
         if(cardsChanged && cardsTabled){
             // Tikki round has finished
             if(thisPlayers.every(player => player.cards.length === 0)){
-                const {pokerWinners, tikkiWinner} = this.getWinner();
+                this.getWinner();
                 setTimeout(() => {
-                    this.toggleRevealHand();
+                    const tikkiWinner = this.tikkiWinner;
+                    this.tikkiStarted = false;
+                    this.tikkiRoundWinner = null;
+                    this.tikkiWinner = null;
+                    this.pokerWinner = null;
+                    this.hideHands();
                     thisPlayers.map(player => player.disableCardsChanged());
                     this.shuffleDeck();
                     this.deal();
                     tikkiWinner.broadcastGame();
-                }, 8000);
+                }, thisPlayers.length * 5000);
 
             }
             this.turn = this.leader.playerId;
+            this.tikkiRoundWinner = this.leader.playerId;
             this.setLand(null);
             this.leader = {
                 playerId:null,
@@ -126,6 +160,13 @@ class Game extends Room {
             }
             thisPlayers.map(player => player.disableCardTabled());
         }else{
+            if(cardsChanged && !cardsTabled){
+                this.tikkiStarted = true;
+                if(this.turn === this.tikkiRoundWinner){
+                    thisPlayers.filter(player => player.id !== this.turn)
+                    .map(player => player.tableCard(null));
+                }
+            }
             this.turn = this.getNextPlayer();
         }
     }
