@@ -1,12 +1,16 @@
 class Room {
-    constructor(name){
+    constructor(id, name){
+        this.type = "lobby";
+        this.id = id;
         this.name = name;
         this.players = {};
     }
 
     getRoom(){
         return {
+            id: this.id,
             name:this.name,
+            type:this.type,
             players:this.formatPlayers()
         }
     }

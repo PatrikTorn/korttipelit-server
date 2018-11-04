@@ -3,8 +3,9 @@ const Card = require('./Card');
 const PokerSolver = require('pokersolver').Hand;
 
 class Game extends Room {
-    constructor(name, players, playersAmount){
-        super(name, players, playersAmount);
+    constructor(id, name, players, playersAmount){
+        super(id, name, players, playersAmount);
+        this.type = "game";
         this.playersAmount = playersAmount;
         this.cards = [];
         this.turn = Object.keys(players)[0];
@@ -22,7 +23,9 @@ class Game extends Room {
 
     getRoom(){
         return {
+            id:this.id,
             name:this.name,
+            type:this.type,
             deck:this.deck,
             trash:this.trash,
             cards:this.cards,
@@ -182,7 +185,7 @@ class Game extends Room {
 
     removePlayer(player){
         if(this.playersCount() === 1){
-            delete rooms[this.name];
+            delete rooms[this.id];
         }else{
             delete this.players[player.id]
         }

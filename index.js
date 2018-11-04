@@ -4,6 +4,7 @@ const {server, io, app} = require('./config');
 const Socket = require('./classes/Socket');
 const {sockets, rooms} = require('./common');
 const port = process.env.PORT || 4000;
+
 // app.use(express.static(path.join(__dirname, '/client/build')));
 function addSocket(socket){
     const sock = new Socket(socket);
@@ -18,13 +19,14 @@ function removeSocket(socket){
     delete sockets[socket.id];
 }
 
-// app.get('*', (req, res) => {
-//     res.sendFile(path.join(__dirname+'/client/build/index.html'));
-//   });
-
 io.on('connection', (socket) => {
     console.log('connected', Object.keys(sockets).length)
     const thisSocket = addSocket(socket);
+
+    socket.on('set name', (name) => {
+        thisSocket.setName(name);
+        thisSocket.emitAll();
+    })
 
     socket.on('join room', (roomName) => {
         thisSocket.joinRoom(rooms[roomName], () => {

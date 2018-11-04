@@ -5,9 +5,9 @@ const PokerSolver = require('pokersolver').Hand;
 
 sockets = {};
 rooms = {
-    lobby: new Room("lobby"),
-    queue2: new Queue("queue-2", 2),
-    queue4: new Queue("queue-4", 4)
+    lobby: new Room("lobby", "Aula"),
+    "queue-2": new Queue("queue-2", "Kaksinpeli", 2),
+    "queue-4": new Queue("queue-4", "Nelinpeli", 4)
 }
 
 function arrayToObject(array){

@@ -4,7 +4,7 @@ const {getRooms, getSockets, sockets, rooms, rankPokerHand} = require('../common
 class Socket {
     constructor(socket){
         this.socket = socket;
-        this.name = ["Juho", "Patu", "Hene", "Teemu", "Kalle", "Ile"][Math.floor(Math.random()*5)]
+        this.name = null;
         this.room = rooms.lobby;
         this.rooms = socket.rooms;
         this.id = this.socket.id;
@@ -19,7 +19,7 @@ class Socket {
 
     getSocket(){
         return {
-            room:this.room.name,
+            room:this.room.id,
             name:this.name,
             id:this.id,
             cards:this.cards,
@@ -31,6 +31,10 @@ class Socket {
             firstTableCard:this.firstTableCard,
             shouldRevealHand:this.shouldRevealHand
         }
+    }
+
+    setName(name){
+        this.name = name;
     }
 
     revealHand(){
@@ -134,7 +138,7 @@ class Socket {
         this.leaveRoom(() => {
             this.room = room;
             room.addPlayer(this, () => {
-                this.socket.join(room.name, cb);
+                this.socket.join(room.id, cb);
             });
         })
     }
@@ -167,7 +171,7 @@ class Socket {
     }
 
     broadcastGame(){
-        io.sockets.in(this.room.name).emit('get game', this.room.getRoom())
+        io.sockets.in(this.room.id).emit('get game', this.room.getRoom())
     }
 }
 
