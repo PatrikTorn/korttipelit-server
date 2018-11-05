@@ -195,7 +195,11 @@ class Game extends Room {
         if(this.cards.length > 0){
             const givenCard = this.cards[0];
             this.deleteCard(givenCard);
+            console.log(givenCard);
             return givenCard;
+        }else{
+            console.log("DEck out");
+            return {}
         }
     }
 

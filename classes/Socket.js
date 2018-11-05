@@ -5,6 +5,7 @@ class Socket {
     constructor(socket){
         this.socket = socket;
         this.name = null;
+        this.money = 500;
         this.room = rooms.lobby;
         this.rooms = socket.rooms;
         this.id = this.socket.id;
@@ -22,6 +23,7 @@ class Socket {
             room:this.room.id,
             name:this.name,
             id:this.id,
+            money:this.money,
             cards:this.cards,
             table:this.table,
             cardsChanged:this.cardsChanged,
@@ -107,7 +109,7 @@ class Socket {
     changeCards(cards){
         cards.map(card => {
             this.giveCard(card);
-            this.receiveCard();
+            this.receiveCard(this.room.giveCard());
         });
         this.cardsChanged = true;
     }
@@ -129,8 +131,7 @@ class Socket {
         }
     }
 
-    receiveCard(){
-        const card = this.room.giveCard()
+    receiveCard(card){
         this.cards.push(card);
     }
     
