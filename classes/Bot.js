@@ -3,19 +3,21 @@ import Socket from './Socket';
 export default class Bot extends Socket{
     constructor(socket, rooms){
         super(socket, rooms);
+        this.id = socket.id;
         this.type = "bot";
-        this.name = `Bot-${parseFloat(Math.random(), 3)}`
+        this.name = `Bot-${parseFloat(Math.random(), 3)}`;
+        this.room = null;
     }
 
-    leaveRoom(cb){
-        // this.room.removePlayer(this);
-    }
-
-
-    joinRoom(room, cb){
+    joinRoom(room){
         this.room = room;
-            room.addPlayer(this, () => {
+        room.addPlayer(this, () => {
+
         });
+    }
+
+    leaveRoom(){
+
     }
 
     changeCards(){
@@ -32,6 +34,11 @@ export default class Bot extends Socket{
     //     console.log(this.cards);
 
     // }
+
+    exitGame() {
+        let {rooms} = require('../common');
+        delete rooms[this.room]
+    }
 
     emitAll(){
         this.emitSocket();

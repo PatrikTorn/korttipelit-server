@@ -16,7 +16,7 @@ export default class Room {
     }
 
     formatPlayers(){
-        return Object.values(this.players).map(player => player.getSocket())
+        return Object.values(this.players).filter(player => player.name).map(player => player.getSocket())
     }
 
     playersCount(){

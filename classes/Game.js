@@ -19,7 +19,7 @@ export default class Game extends Room {
         this.tikkiRoundWinner = null;
         this.tikkiWinner = null;
         this.pokerWinner = null;
-        this.pointLimit = 20;
+        this.pointLimit = 12;
         this.bet = 75;
     }
 
@@ -147,6 +147,7 @@ export default class Game extends Room {
 
 
     removePlayer(player){
+        let {rooms} = require('../common');
         delete this.players[player.id];
         if(this.playersCount() === 1){
             Object.values(this.players)[0].exitGame();
