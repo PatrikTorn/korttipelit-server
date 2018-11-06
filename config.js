@@ -1,10 +1,13 @@
-const cors = require('cors');
-const app = require('express')();
-// app.use(cors());
-const server = require('http').Server(app);
-const io = require('socket.io')(server);
+import cors from 'cors';
+import express from 'express'
+import http from 'http'
+import socketIo from 'socket.io'
 
-module.exports = {
+const app = express();
+const server = http.Server(app);
+const io = socketIo(server);
+
+export {
     app,
     server,
     io

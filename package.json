@@ -4,15 +4,20 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index"
+    "start": "nodemon start.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@babel/preset-es2016": "^7.0.0-beta.53",
+    "babel-preset-env": "^1.7.0",
+    "babel-register": "^6.26.0",
     "cors": "^2.8.4",
+    "esm": "^3.0.84",
     "express": "^4.16.4",
     "http": "^0.0.0",
+    "mongoose": "^5.3.9",
     "nodemon": "^1.18.5",
     "pokersolver": "^2.1.2",
     "socket.io": "^2.1.1"

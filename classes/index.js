@@ -1,10 +1,5 @@
-const Room = require('./Room');
-const Queue = require('./Queue');
-const Game = require('./Game');
-const Socket = require('./Socket');
-module.exports = {
-    Room,
-    Queue,
-    Game,
-    Socket
-}
+export {default as Room} from './Room'
+export {default as Queue} from './Queue'
+export {default as Game} from './Game'
+export {default as Socket} from './Socket'
+export {default as Bot} from './Bot'

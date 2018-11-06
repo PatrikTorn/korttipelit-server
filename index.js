@@ -1,13 +1,11 @@
-const path = require('path');
-const express = require('express');
-const {server, io, app} = require('./config');
-const Socket = require('./Socket');
-const {sockets, rooms} = require('./common');
+import {server, io, app} from './config';
+import {Socket} from './classes';
+import {sockets, rooms} from './common'
 const port = process.env.PORT || 4000;
 
 // app.use(express.static(path.join(__dirname, '/client/build')));
 function addSocket(socket){
-    const sock = new Socket(socket);
+    const sock = new Socket(socket, rooms);
     sock.joinRoom(rooms.lobby, () => {
         sock.emitAll();        
     });

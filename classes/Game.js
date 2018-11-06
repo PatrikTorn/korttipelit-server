@@ -1,9 +1,8 @@
-const Room = require('./Room');
-const Card = require('./Card');
-const PokerSolver = require('pokersolver').Hand;
+import Room from './Room';
+import Card from './Card';
+import {getPokerWinner} from '../gameTools'
 
-
-class Game extends Room {
+export default class Game extends Room {
     constructor(id, name, players, playersAmount){
         super(id, name, players, playersAmount);
         this.type = "game";
@@ -42,17 +41,7 @@ class Game extends Room {
         }
     }
 
-    getPokerWinner(){
-        let handz = [];
-        for(let player in this.players){
-            const thisPlayer = this.players[player];
-            const hand = PokerSolver.solve(thisPlayer.getHand().hand.map(card => card.cardNo));
-            hand.owner = thisPlayer.id;
-            handz.push(hand);
-        }
-        const winner = PokerSolver.winners(handz)[0].owner;
-        return this.players[winner];
-    }
+
     
 
     revealHands(){
@@ -121,7 +110,7 @@ class Game extends Room {
         if(this.leader.cardValue === 1) tikkiPoints = 4;
         else tikkiPoints = 2;
         this.tikkiWinner.addPoints(tikkiPoints)
-        this.pokerWinner = this.getPokerWinner();
+        this.pokerWinner = getPokerWinner(this.players);
         this.pokerWinner.addPoints(this.pokerWinner.hand.points);
         this.tikkiWinner.broadcastGame();
         this.revealHands();
@@ -139,6 +128,10 @@ class Game extends Room {
             thisPlayers.map(player => player.disableCardsChanged());
             this.shuffleDeck();
             this.deal();
+            while (this.players[this.turn].type !== "human"){
+                this.turn = this.getNextPlayer()
+            }
+
             tikkiWinner.broadcastGame();
         }, thisPlayers.length * 3000);
     }
@@ -169,11 +162,10 @@ class Game extends Room {
         const thisPlayers = Object.values(this.players);
         const cardsChanged = thisPlayers.every(player => player.cardsChanged);
         const cardsTabled = thisPlayers.every(player => player.cardTabled);
+        const cardsEnded = thisPlayers.every(player => player.cards.length === 0);
         if(cardsChanged && cardsTabled){
-            
-            
             // Tikki round has finished
-            if(thisPlayers.every(player => player.cards.length === 0)){
+            if(cardsEnded){
                 this.getWinner();
                 if(this.tikkiWinner.points > this.pointLimit || this.pokerWinner.points > this.pointLimit){
                     return this.finishGame()
@@ -198,7 +190,30 @@ class Game extends Room {
             }
             this.turn = this.getNextPlayer();
         }
+
+        const nextPlayer = this.players[this.turn];
+        const isBotTurn = nextPlayer.type === "bot";
+        if(isBotTurn && !cardsEnded){
+            this.moveBot(nextPlayer)
+        }    
     }
+
+    moveBot(bot){
+        if(!bot.cardsChanged){
+            bot.changeCards();
+        }else if(!bot.cardTabled){
+            setTimeout(() => {
+                const firstCard = bot.cards
+                .filter(card => card.enabled)[0]
+                bot.tableCard(firstCard);
+                this.setNextTurn();
+                bot.broadcastGame();
+            }, 1000)
+
+        }
+    }
+
+
 
     addPlayer(player, cb){
         this.players[player.id] = player;
@@ -246,5 +261,3 @@ class Game extends Room {
         }
     }
 }
-
-module.exports = Game;

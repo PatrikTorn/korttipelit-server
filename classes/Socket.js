@@ -1,11 +1,12 @@
-const Card = require('./Card');
-const {io} = require('./config');
-const {getRooms, getSockets, sockets, rooms, rankPokerHand} = require('./common');
-class Socket {
-    constructor(socket){
+import {io} from '../config';
+import {rankPokerHand} from '../gameTools';
+
+export default class Socket {
+    constructor(socket, rooms){
         this.socket = socket;
         this.name = null;
         this.money = 500;
+        this.type = "human";
         this.room = rooms.lobby;
         this.rooms = rooms;
         this.id = this.socket.id;
@@ -27,6 +28,7 @@ class Socket {
             },
             name:this.name,
             id:this.id,
+            type:this.type,
             money:this.money,
             cards:this.cards,
             table:this.table,
@@ -37,6 +39,10 @@ class Socket {
             firstTableCard:this.firstTableCard,
             shouldRevealHand:this.shouldRevealHand
         }
+    }
+
+    getRooms(){
+        return Object.values(this.rooms).map(room => room.getRoom())
     }
 
     earnMoney(player){
@@ -199,16 +205,14 @@ class Socket {
     }
 
     emitSockets(){
-        io.sockets.emit('get sockets', getSockets());
+        // io.sockets.emit('get sockets', getSockets());
     }
 
     emitRooms(){
-        io.sockets.emit('get rooms', getRooms());
+        io.sockets.emit('get rooms', this.getRooms());
     }
 
     broadcastGame(){
         io.sockets.in(this.room.id).emit('get game', this.room.getRoom())
     }
 }
-
-module.exports = Socket;

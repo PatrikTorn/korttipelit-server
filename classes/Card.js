@@ -7,8 +7,9 @@ const colors = {
     red:"red"
 };
 const landNos = [1,2,4,8];
-const imageFormat = '.png'; 
-class Card {
+const imageFormat = '.png';
+
+export default class Card {
     constructor(landId, numberId){
         this.number = numbers[numberId].toString();
         this.land = lands[landId];
@@ -51,5 +52,3 @@ class Card {
         this.enabled = false;
     }
 }
-
-module.exports = Card;

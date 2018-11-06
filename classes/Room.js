@@ -1,4 +1,4 @@
-class Room {
+export default class Room {
     constructor(id, name){
         this.type = "lobby";
         this.id = id;
@@ -32,5 +32,3 @@ class Room {
         delete this.players[player.id]
     }
 }
-
-module.exports = Room;
