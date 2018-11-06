@@ -129,7 +129,7 @@ class Game extends Room {
 
     resetGame(){
         const thisPlayers = Object.values(this.players);
-        // setTimeout(() => {
+        setTimeout(() => {
             const tikkiWinner = this.tikkiWinner;
             this.tikkiStarted = false;
             this.tikkiRoundWinner = null;
@@ -140,7 +140,7 @@ class Game extends Room {
             this.shuffleDeck();
             this.deal();
             tikkiWinner.broadcastGame();
-        // }, thisPlayers.length * 5000);
+        }, thisPlayers.length * 3000);
     }
 
     finishGame(){
