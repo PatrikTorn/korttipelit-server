@@ -1,7 +1,5 @@
-const Room = require('./classes/Room');
-const Queue = require('./classes/Queue');
-const PokerSolver = require('pokersolver').Hand;
-
+const Room = require('./Room');
+const Queue = require('./Queue');
 
 sockets = {};
 rooms = {

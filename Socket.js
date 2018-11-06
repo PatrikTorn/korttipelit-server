@@ -1,13 +1,13 @@
-const Card = require('../classes/Card');
-const {io} = require('../config');
-const {getRooms, getSockets, sockets, rooms, rankPokerHand} = require('../common');
+const Card = require('./Card');
+const {io} = require('./config');
+const {getRooms, getSockets, sockets, rooms, rankPokerHand} = require('./common');
 class Socket {
     constructor(socket){
         this.socket = socket;
         this.name = null;
         this.money = 500;
         this.room = rooms.lobby;
-        this.rooms = socket.rooms;
+        this.rooms = rooms;
         this.id = this.socket.id;
         this.cards = [];
         this.table = [];
@@ -20,7 +20,11 @@ class Socket {
 
     getSocket(){
         return {
-            room:this.room.id,
+            room:{
+                id:this.room.id,
+                type:this.room.type,
+                name:this.room.name
+            },
             name:this.name,
             id:this.id,
             money:this.money,
@@ -33,6 +37,32 @@ class Socket {
             firstTableCard:this.firstTableCard,
             shouldRevealHand:this.shouldRevealHand
         }
+    }
+
+    earnMoney(player){
+        const bet = player.room.bet;
+        const exchange = (this.points - player.points) * bet;
+        player.giveMoney(exchange)
+        this.money = this.money + exchange;
+    }
+
+    giveMoney(amount){
+        this.money = this.money - amount;
+    }
+
+    exitGame(){
+        this.joinRoom(this.rooms.lobby, () => {
+            this.cards = [];
+            this.table = [];
+            this.cardsChanged = false;
+            this.cardTabled = false;
+            this.points = 0;
+            this.firstTableCard = null;
+            this.shouldRevealHand = false;
+            this.emitAll();
+            this.resetGame()
+        })
+
     }
 
     setName(name){
@@ -145,7 +175,7 @@ class Socket {
     }
 
     leaveRoom(cb){
-        this.room.removePlayer(this.socket);
+        this.room.removePlayer(this);
         this.socket.leave(this.room, cb);
     }
 
@@ -159,8 +189,13 @@ class Socket {
         this.socket.emit('get socket', this.getSocket());
     }
 
-    emitGame(){
-        this.socket.emit('get game', this.room.getRoom());
+    emitGame(game = this.room.getRoom()){
+        this.socket.emit('get game', game);
+    }
+
+    
+    resetGame(){
+        this.socket.emit('reset game');
     }
 
     emitSockets(){

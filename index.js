@@ -1,7 +1,7 @@
 const path = require('path');
 const express = require('express');
 const {server, io, app} = require('./config');
-const Socket = require('./classes/Socket');
+const Socket = require('./Socket');
 const {sockets, rooms} = require('./common');
 const port = process.env.PORT || 4000;
 
