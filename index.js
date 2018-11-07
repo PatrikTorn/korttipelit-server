@@ -1,9 +1,10 @@
 import {server, io, app} from './config';
 import {Socket} from './classes';
 import {sockets, rooms} from './common'
+import {checkPlayer} from './services/PlayerService';
+
 const port = process.env.PORT || 4000;
 
-// app.use(express.static(path.join(__dirname, '/client/build')));
 function addSocket(socket){
     const sock = new Socket(socket, rooms);
     sock.joinRoom(rooms.lobby, () => {
@@ -18,18 +19,29 @@ function removeSocket(socket){
 }
 
 io.on('connection', (socket) => {
-    console.log('connected', Object.keys(sockets).length)
     const thisSocket = addSocket(socket);
 
-    socket.on('set name', (name) => {
-        thisSocket.setName(name);
-        thisSocket.emitAll();
+    socket.on('set name', async(name) => {
+        try{
+            const data = await checkPlayer(name);
+            thisSocket.initPlayer(data);
+            thisSocket.emitAll();
+        }catch(e){
+            console.log(e);
+        }
     })
 
     socket.on('join room', (roomName) => {
         thisSocket.joinRoom(rooms[roomName], () => {
             thisSocket.emitAll();
         });
+    });
+
+    socket.on('play offline', () => {
+        thisSocket.room.playOffline();
+        // thisSocket.emitAll();
+        // thisSocket.broadcastGame();
+        console.log(thisSocket.room);
     });
 
     socket.on('change cards', (cards) => {
@@ -50,7 +62,6 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
-        console.log('disconnected', Object.keys(sockets).length)
         removeSocket(thisSocket);
         thisSocket.emitAll();
     })

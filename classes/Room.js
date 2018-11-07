@@ -3,7 +3,7 @@ export default class Room {
         this.type = "lobby";
         this.id = id;
         this.name = name;
-        this.players = {};
+        this.players = [];
     }
 
     getRoom(){
@@ -16,19 +16,23 @@ export default class Room {
     }
 
     formatPlayers(){
-        return Object.values(this.players).filter(player => player.name).map(player => player.getSocket())
+        return this.players.filter(player => player.name).map(player => player.getSocket())
     }
 
     playersCount(){
-        return Object.keys(this.players).length;
+        return this.players.length;
     }
 
     addPlayer(player, cb){
-        this.players[player.id] = player;
+        this.players.push(player);
         cb();
     }
 
+    findPlayer(player){
+        return this.players.find(p => p.id === player.id);
+    }
+
     removePlayer(player){
-        delete this.players[player.id]
+        this.players = this.players.filter(p => p.id !== player.id);
     }
 }

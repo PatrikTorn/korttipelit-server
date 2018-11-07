@@ -1,11 +1,13 @@
 import {io} from '../config';
 import {rankPokerHand} from '../gameTools';
+import * as PlayerService from '../services/PlayerService';
 
 export default class Socket {
     constructor(socket, rooms){
-        this.socket = socket;
+        this.money = 99999;
         this.name = null;
-        this.money = 500;
+        this.uuid = null;
+        this.socket = socket;
         this.type = "human";
         this.room = rooms.lobby;
         this.rooms = rooms;
@@ -27,6 +29,7 @@ export default class Socket {
                 name:this.room.name
             },
             name:this.name,
+            uuid:this.uuid,
             id:this.id,
             type:this.type,
             money:this.money,
@@ -50,10 +53,16 @@ export default class Socket {
         const exchange = (this.points - player.points) * bet;
         player.giveMoney(exchange)
         this.money = this.money + exchange;
+        this.persistPlayer()
     }
 
     giveMoney(amount){
         this.money = this.money - amount;
+        this.persistPlayer()
+    }
+
+    persistPlayer(){
+        PlayerService.updatePlayer(this.getSocket())
     }
 
     exitGame(){
@@ -68,11 +77,12 @@ export default class Socket {
             this.emitAll();
             this.resetGame()
         })
-
     }
 
-    setName(name){
+    initPlayer({name, _id, money}){
         this.name = name;
+        this.uuid = _id;
+        this.money = money;
     }
 
     revealHand(){
@@ -86,8 +96,8 @@ export default class Socket {
 
     getHand(){
         const hand = [...this.cards, ...this.table];
-        this.hand = rankPokerHand(hand);
-        return {...rankPokerHand(hand), hand}
+        this.hand = rankPokerHand(hand.map(card => card.cardNo));
+        return {...this.hand, hand}
     }
 
     disableCardTabled(){

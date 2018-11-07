@@ -8,19 +8,21 @@ export default class Game extends Room {
         this.type = "game";
         this.playersAmount = playersAmount;
         this.cards = [];
-        this.turn = Object.keys(players)[0];
+        this.turn = players[0].id;
         this.shuffleDeck();
         this.land = null;
         this.leader = {
             playerId:null,
-            cardValue:null
+            cardRank:null
         }
         this.tikkiStarted = false;
         this.tikkiRoundWinner = null;
         this.tikkiWinner = null;
         this.pokerWinner = null;
-        this.pointLimit = 12;
-        this.bet = 75;
+        this.pointLimit = 20;
+        this.bet = 50;
+        this.gameWinner = null;
+        this.moneyExchange = null;
     }
 
     getRoom(){
@@ -37,7 +39,9 @@ export default class Game extends Room {
             tikkiStarted:this.tikkiStarted,
             tikkiRoundWinner:this.tikkiRoundWinner,
             tikkiWinner:this.tikkiWinner && this.tikkiWinner.getSocket(),
-            pokerWinner:this.pokerWinner && this.pokerWinner.getSocket()
+            pokerWinner:this.pokerWinner && this.pokerWinner.getSocket(),
+            gameWinner:this.gameWinner,
+            moneyExchange:this.moneyExchange
         }
     }
 
@@ -45,8 +49,7 @@ export default class Game extends Room {
     
 
     revealHands(){
-        const thisPlayers = Object.values(this.players);
-        thisPlayers.map((player, i) => {
+        this.players.map(player => {
             // setTimeout(() => {
                 player.revealHand()
             // }, i * 5000)
@@ -54,11 +57,10 @@ export default class Game extends Room {
     }
 
     hideHands(){
-        const thisPlayers = Object.values(this.players);
-        thisPlayers.map(player => {
+        this.players.map(player => {
             player.hideHand();
         })
-        thisPlayers[0].broadcastGame();
+        this.players[0].broadcastGame();
     }
 
     findCard(card){
@@ -71,30 +73,30 @@ export default class Game extends Room {
 
     setLand(land){
         this.land = land;
-        for(let player in this.players){
-            this.players[player].checkEnabledCards(land);
-        }
+        this.players.map(player => {
+            player.checkEnabledCards(land);
+        });
     }
 
     setLeader(playerId, card){
         if(this.leader.playerId){
-            if(card.value > this.leader.cardValue && card.land === this.land){
+            if(card.rank > this.leader.cardRank && card.land === this.land){
                 this.leader = {
                     playerId,
-                    cardValue:card.value
+                    cardRank:card.rank
                 }
             }
         }else{
             this.leader = {
                 playerId,
-                cardValue:card.value
+                cardRank:card.rank
             }
         }
     }
 
     getNextPlayer(){
         const playerId = this.turn;
-        const thisPlayers = Object.keys(this.players);
+        const thisPlayers = this.players.map(player => player.id);
         const thisIndex = thisPlayers.indexOf(playerId);
         if(playerId === thisPlayers[thisPlayers.length - 1]){
             return thisPlayers[0];
@@ -105,9 +107,9 @@ export default class Game extends Room {
 
 
     getWinner(){
-        this.tikkiWinner = this.players[this.leader.playerId];
+        this.tikkiWinner = this.players.find(player => player.id === this.leader.playerId);
         let tikkiPoints;
-        if(this.leader.cardValue === 1) tikkiPoints = 4;
+        if(this.leader.cardRank === 0) tikkiPoints = 4;
         else tikkiPoints = 2;
         this.tikkiWinner.addPoints(tikkiPoints)
         this.pokerWinner = getPokerWinner(this.players);
@@ -117,7 +119,6 @@ export default class Game extends Room {
     }
 
     resetGame(){
-        const thisPlayers = Object.values(this.players);
         setTimeout(() => {
             const tikkiWinner = this.tikkiWinner;
             this.tikkiStarted = false;
@@ -125,45 +126,47 @@ export default class Game extends Room {
             this.tikkiWinner = null;
             this.pokerWinner = null;
             this.hideHands();
-            thisPlayers.map(player => player.disableCardsChanged());
+            this.players.map(player => player.disableCardsChanged());
             this.shuffleDeck();
             this.deal();
-            while (this.players[this.turn].type !== "human"){
+            while (this.players.find(player => player.id === this.turn).turn !== "human"){
                 this.turn = this.getNextPlayer()
             }
-
             tikkiWinner.broadcastGame();
-        }, thisPlayers.length * 3000);
+        }, this.players.length * 3000);
     }
 
     finishGame(){
-        const thisPlayers = Object.values(this.players);
-        const winner = thisPlayers.sort((a,b) => b.points-a.points)[0];
-        thisPlayers.map(player => winner.earnMoney(player));       
-        thisPlayers.map(player => {
-            player.exitGame();
-        });
+        const winner = this.players.sort((a,b) => b.points-a.points)[0];
+        this.players.map(player => winner.earnMoney(player));
+        this.gameWinner = winner.getSocket();
+        this.moneyExchange = this.players.map(player => ({...player.getSocket(), money:(winner.points - player.points)*this.bet}));
+        winner.broadcastGame();
+        setTimeout(() => {
+            this.players.map(player => {
+                player.exitGame();
+            });
+        }, 5000);
     }
 
 
     removePlayer(player){
         let {rooms} = require('../common');
-        delete this.players[player.id];
+        this.players = this.players.filter(p => p.id !== player.id);
         if(this.playersCount() === 1){
-            Object.values(this.players)[0].exitGame();
+            this.players[0].exitGame();
             delete rooms[this.id];
         }else{
-            Object.values(this.players).map(player => {
+            this.players.map(player => {
                 player.emitGame();
             });
         }
     }
 
     setNextTurn(){
-        const thisPlayers = Object.values(this.players);
-        const cardsChanged = thisPlayers.every(player => player.cardsChanged);
-        const cardsTabled = thisPlayers.every(player => player.cardTabled);
-        const cardsEnded = thisPlayers.every(player => player.cards.length === 0);
+        const cardsChanged = this.players.every(player => player.cardsChanged);
+        const cardsTabled = this.players.every(player => player.cardTabled);
+        const cardsEnded = this.players.every(player => player.cards.length === 0);
         if(cardsChanged && cardsTabled){
             // Tikki round has finished
             if(cardsEnded){
@@ -180,19 +183,19 @@ export default class Game extends Room {
                 playerId:null,
                 cardValue:null
             }
-            thisPlayers.map(player => player.disableCardTabled());
+            this.players.map(player => player.disableCardTabled());
         }else{
             if(cardsChanged && !cardsTabled){
                 this.tikkiStarted = true;
                 if(this.turn === this.tikkiRoundWinner){
-                    thisPlayers.filter(player => player.id !== this.turn)
+                    this.players.filter(player => player.id !== this.turn)
                     .map(player => player.tableCard(null));
                 }
             }
             this.turn = this.getNextPlayer();
         }
 
-        const nextPlayer = this.players[this.turn];
+        const nextPlayer = this.players.find(player => player.id === this.turn)
         const isBotTurn = nextPlayer.type === "bot";
         if(isBotTurn && !cardsEnded){
             this.moveBot(nextPlayer)
@@ -217,7 +220,7 @@ export default class Game extends Room {
 
 
     addPlayer(player, cb){
-        this.players[player.id] = player;
+        this.players.push(player);
         cb();
         if(this.playersCount() === this.playersAmount){
             this.deal();
@@ -254,11 +257,11 @@ export default class Game extends Room {
     }
 
     deal(){
-        for(let player in this.players){
-            const thisPlayer = this.players[player];
+        this.players.map(player => {
             for(let i=0;i<5;i++){
-                thisPlayer.receiveCard(this.giveCard());
+                player.receiveCard(this.giveCard());
             }
-        }
+        });
     }
+
 }
