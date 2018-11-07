@@ -119,21 +119,19 @@ export default class Game extends Room {
     }
 
     resetGame(){
-        setTimeout(() => {
-            const tikkiWinner = this.tikkiWinner;
-            this.tikkiStarted = false;
-            this.tikkiRoundWinner = null;
-            this.tikkiWinner = null;
-            this.pokerWinner = null;
-            this.hideHands();
-            this.players.map(player => player.disableCardsChanged());
-            this.shuffleDeck();
-            this.deal();
-            while (this.players.find(player => player.id === this.turn).turn !== "human"){
-                this.turn = this.getNextPlayer()
-            }
-            tikkiWinner.broadcastGame();
-        }, this.players.length * 3000);
+        const tikkiWinner = this.tikkiWinner;
+        this.tikkiStarted = false;
+        this.tikkiRoundWinner = null;
+        this.tikkiWinner = null;
+        this.pokerWinner = null;
+        this.hideHands();
+        this.players.map(player => player.disableCardsChanged());
+        this.shuffleDeck();
+        this.deal();
+        while (this.players.find(player => player.id === this.turn).type !== "human"){
+            this.turn = this.getNextPlayer()
+        }
+        tikkiWinner.broadcastGame();
     }
 
     finishGame(){
@@ -174,7 +172,10 @@ export default class Game extends Room {
                 if(this.tikkiWinner.points > this.pointLimit || this.pokerWinner.points > this.pointLimit){
                     return this.finishGame()
                 }
-                this.resetGame();
+                setTimeout(() => {
+                    this.resetGame();
+                },5000)
+
             }
             this.turn = this.leader.playerId;
             this.tikkiRoundWinner = this.leader.playerId;
