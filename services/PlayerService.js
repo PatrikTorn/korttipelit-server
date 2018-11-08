@@ -15,7 +15,11 @@ async function findPlayer(playerName){
 async function updatePlayer(player){
     return await Player.findByIdAndUpdate(
         player.uuid,
-        {money:player.money},
+        {
+            money:player.money,
+            gamesPlayed:player.gamesPlayed,
+            highestHand:player.highestHand
+        },
         {new: false},
     );
 }

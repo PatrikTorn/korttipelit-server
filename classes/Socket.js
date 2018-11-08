@@ -4,14 +4,23 @@ import * as PlayerService from '../services/PlayerService';
 
 export default class Socket {
     constructor(socket, rooms){
+        // db
         this.money = 99999;
         this.name = null;
         this.uuid = null;
+        this.gamesPlayed = 0;
+        this.highestHand = 0;
+
+        // socket
         this.socket = socket;
+        this.id = this.socket.id;
+
+        // config
         this.type = "human";
         this.room = rooms.lobby;
         this.rooms = rooms;
-        this.id = this.socket.id;
+
+        // game
         this.cards = [];
         this.table = [];
         this.cardsChanged = false;
@@ -40,12 +49,23 @@ export default class Socket {
             points:this.points,
             hand:this.getHand(),
             firstTableCard:this.firstTableCard,
-            shouldRevealHand:this.shouldRevealHand
+            shouldRevealHand:this.shouldRevealHand,
+            gamesPlayed:this.gamesPlayed,
+            highestHand:this.highestHand
         }
     }
 
     getRooms(){
         return Object.values(this.rooms).map(room => room.getRoom())
+    }
+
+    setStats(){
+        const handRank = this.getHand().rank;
+        if(handRank > this.highestHand){
+            this.highestHand = handRank;
+        }
+        this.gamesPlayed = this.gamesPlayed + 1;
+        this.persistPlayer();
     }
 
     earnMoney(player){
@@ -79,10 +99,12 @@ export default class Socket {
         })
     }
 
-    initPlayer({name, _id, money}){
+    initPlayer({name, _id, money, gamesPlayed, highestHand}){
         this.name = name;
         this.uuid = _id;
         this.money = money;
+        this.highestHand = highestHand;
+        this.gamesPlayed = gamesPlayed;
     }
 
     revealHand(){
@@ -153,7 +175,7 @@ export default class Socket {
     }
 
     changeCards(cards){
-        cards.map(card => {
+        (cards || []).map(card => {
             this.giveCard(card);
             this.receiveCard(this.room.giveCard());
         });

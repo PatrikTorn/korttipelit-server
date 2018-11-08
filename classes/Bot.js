@@ -21,11 +21,7 @@ export default class Bot extends Socket{
     }
 
     changeCards(){
-        setTimeout(() => {
-            this.cardsChanged = true;
-            this.room.setNextTurn();
-            this.broadcastGame();
-        }, 1000);
+
     }
 
     // tableCard(){

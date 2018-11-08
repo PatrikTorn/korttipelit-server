@@ -11,6 +11,14 @@ const playerSchema = new mongoose.Schema({
         required:false,
         default:500,
         type:Number
+    },
+    gamesPlayed:{
+        default:0,
+        type:Number
+    },
+    highestHand:{
+        type:Number,
+        default:0
     }
 });
 

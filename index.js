@@ -50,6 +50,10 @@ io.on('connection', (socket) => {
         thisSocket.broadcastGame();
     });
 
+    socket.on('miss turn', () => {
+        thisSocket.room.moveBot(thisSocket);
+    })
+
     socket.on('select card', (card) => {
         thisSocket.selectCard(card);
         thisSocket.emitGame();

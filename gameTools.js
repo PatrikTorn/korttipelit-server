@@ -88,7 +88,7 @@ const hands = {
 function rankPokerHand(cards){
     if(cards.length === 5){
         const hand = JSON.parse(JSON.stringify(PokerSolver.solve(cards)))
-        return hands[hand.rank];    
+        return {...hands[hand.rank], rank:hand.rank};    
     }
 
     // const cs = cards.map(card => card.value);

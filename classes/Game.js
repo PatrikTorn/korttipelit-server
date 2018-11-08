@@ -1,5 +1,6 @@
 import Room from './Room';
 import Card from './Card';
+import {io} from '../config';
 import {getPokerWinner} from '../gameTools'
 
 export default class Game extends Room {
@@ -19,10 +20,11 @@ export default class Game extends Room {
         this.tikkiRoundWinner = null;
         this.tikkiWinner = null;
         this.pokerWinner = null;
-        this.pointLimit = 20;
+        this.pointLimit = 1;
         this.bet = 50;
         this.gameWinner = null;
         this.moneyExchange = null;
+        this.setTimer();
     }
 
     getRoom(){
@@ -41,12 +43,19 @@ export default class Game extends Room {
             tikkiWinner:this.tikkiWinner && this.tikkiWinner.getSocket(),
             pokerWinner:this.pokerWinner && this.pokerWinner.getSocket(),
             gameWinner:this.gameWinner,
-            moneyExchange:this.moneyExchange
+            moneyExchange:this.moneyExchange,
+            timer:this.timer
         }
     }
 
+    setTimer(){
+        this.duration = 10000;
+        this.timer = {
+            turnEnds:new Date().getTime() + this.duration,
+            duration:this.duration
+        }
+    }
 
-    
 
     revealHands(){
         this.players.map(player => {
@@ -60,7 +69,7 @@ export default class Game extends Room {
         this.players.map(player => {
             player.hideHand();
         })
-        this.players[0].broadcastGame();
+        this.broadcastGame();
     }
 
     findCard(card){
@@ -98,6 +107,7 @@ export default class Game extends Room {
         const playerId = this.turn;
         const thisPlayers = this.players.map(player => player.id);
         const thisIndex = thisPlayers.indexOf(playerId);
+        this.setTimer();
         if(playerId === thisPlayers[thisPlayers.length - 1]){
             return thisPlayers[0];
         }else{
@@ -114,7 +124,7 @@ export default class Game extends Room {
         this.tikkiWinner.addPoints(tikkiPoints)
         this.pokerWinner = getPokerWinner(this.players);
         this.pokerWinner.addPoints(this.pokerWinner.hand.points);
-        this.tikkiWinner.broadcastGame();
+        this.broadcastGame();
         this.revealHands();
     }
 
@@ -131,15 +141,19 @@ export default class Game extends Room {
         while (this.players.find(player => player.id === this.turn).type !== "human"){
             this.turn = this.getNextPlayer()
         }
-        tikkiWinner.broadcastGame();
+        this.broadcastGame();
     }
 
     finishGame(){
         const winner = this.players.sort((a,b) => b.points-a.points)[0];
-        this.players.map(player => winner.earnMoney(player));
+        this.players.map(player => {
+            winner.earnMoney(player);
+            player.setStats();
+        });
         this.gameWinner = winner.getSocket();
         this.moneyExchange = this.players.map(player => ({...player.getSocket(), money:(winner.points - player.points)*this.bet}));
-        winner.broadcastGame();
+        this.broadcastGame();
+        
         setTimeout(() => {
             this.players.map(player => {
                 player.exitGame();
@@ -178,6 +192,7 @@ export default class Game extends Room {
 
             }
             this.turn = this.leader.playerId;
+            this.setTimer();
             this.tikkiRoundWinner = this.leader.playerId;
             this.setLand(null);
             this.leader = {
@@ -204,18 +219,17 @@ export default class Game extends Room {
     }
 
     moveBot(bot){
-        if(!bot.cardsChanged){
-            bot.changeCards();
-        }else if(!bot.cardTabled){
-            setTimeout(() => {
-                const firstCard = bot.cards
-                .filter(card => card.enabled)[0]
-                bot.tableCard(firstCard);
-                this.setNextTurn();
-                bot.broadcastGame();
-            }, 1000)
-
-        }
+        setTimeout(() => {
+            if(!bot.cardsChanged){
+                bot.cardsChanged = true;
+            }else if(!bot.cardTabled){
+                    const firstCard = bot.cards
+                    .filter(card => card.enabled)[0]
+                    bot.tableCard(firstCard);
+            }
+            this.setNextTurn();
+            this.broadcastGame();
+        }, bot.type === "bot" ? 2500 : 0)
     }
 
 
@@ -225,7 +239,7 @@ export default class Game extends Room {
         cb();
         if(this.playersCount() === this.playersAmount){
             this.deal();
-            player.broadcastGame();
+            this.broadcastGame();
         }
     }
 
@@ -263,6 +277,10 @@ export default class Game extends Room {
                 player.receiveCard(this.giveCard());
             }
         });
+    }
+
+    broadcastGame(){
+        io.sockets.in(this.id).emit('get game', this.getRoom())
     }
 
 }
