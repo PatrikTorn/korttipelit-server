@@ -6,7 +6,7 @@ export default class Room {
         this.players = [];
     }
 
-    getRoom(){
+    getSelf(){
         return {
             id: this.id,
             name:this.name,
@@ -15,8 +15,10 @@ export default class Room {
         }
     }
 
+    
+
     formatPlayers(){
-        return this.players.filter(player => player.name).map(player => player.getSocket())
+        return this.players.filter(player => player.name).map(player => player.getSelf())
     }
 
     playersCount(){

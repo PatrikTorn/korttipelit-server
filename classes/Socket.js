@@ -1,5 +1,6 @@
 import {io} from '../config';
 import {rankPokerHand} from '../gameTools';
+import Card from './Card';
 import * as PlayerService from '../services/PlayerService';
 
 export default class Socket {
@@ -28,13 +29,15 @@ export default class Socket {
         this.points = 0;
         this.firstTableCard = null;
         this.shouldRevealHand = false;
+        this.cardTaken = false;
     }
 
-    getSocket(){
+    getSelf(){
         return {
             room:{
                 id:this.room.id,
                 type:this.room.type,
+                gameType:this.room.gameType,
                 name:this.room.name
             },
             name:this.name,
@@ -42,7 +45,7 @@ export default class Socket {
             id:this.id,
             type:this.type,
             money:this.money,
-            cards:this.cards,
+            cards:this.cards.sort((a,b) => b.rank-a.rank),
             table:this.table,
             cardsChanged:this.cardsChanged,
             cardTabled:this.cardTabled,
@@ -51,12 +54,13 @@ export default class Socket {
             firstTableCard:this.firstTableCard,
             shouldRevealHand:this.shouldRevealHand,
             gamesPlayed:this.gamesPlayed,
-            highestHand:this.highestHand
+            highestHand:this.highestHand,
+            cardTaken:this.cardTaken
         }
     }
 
     getRooms(){
-        return Object.values(this.rooms).map(room => room.getRoom())
+        return Object.values(this.rooms).map(room => room.getSelf())
     }
 
     setStats(){
@@ -82,7 +86,7 @@ export default class Socket {
     }
 
     persistPlayer(){
-        PlayerService.updatePlayer(this.getSocket())
+        PlayerService.updatePlayer(this.getSelf())
     }
 
     exitGame(){
@@ -169,14 +173,120 @@ export default class Socket {
         thisCard.selected = !thisCard.selected;
     }
 
+    enableCards(){
+        this.cards.map(card => card.enableCard());
+    }
+
+    PH_clickCard(cardObj){
+        const card = this.findCard(cardObj);
+        const sameCards = this.cards.filter(c => c.rank === card.rank);
+        if(card.value === "10" || card.value === "A"){
+            this.PH_trashTable(card);
+        }else if(sameCards.length > 1 && card.value !== "2"){
+            this.PH_selectMultipleCards(card);
+        }else{
+            this.PH_changeCards([card]);
+        }
+    }
+
+    PH_trashTable(card){
+        this.room.trashTable();
+        this.enableCards();
+        this.deleteCard(card);
+        this.receiveCard(this.room.giveCard());
+        this.broadcastGame();
+        const nowPlayer = this.room.findPlayer({id:this.room.turn});
+        if(nowPlayer.type === 'bot'){
+            this.room.moveBot(nowPlayer);
+        }
+    }
+
+    PH_selectMultipleCards(card){
+        if(card.selected){
+            if(this.cards.filter(c => c.selected).length > 1){
+                this.cards.filter(c => c.rank === card.rank).map(c => c.enableCard())
+            }else{
+                this.PH_checkHandAgainstTable();
+            }
+        }else{
+            this.cards.map(c => {
+                if(c.rank === card.rank){
+                    c.enableCard()
+                }else{
+                    c.disableCard()
+                }
+            });
+        }
+        card.selected = !card.selected;
+        this.emitGame()
+    }
+
+    PH_checkHandAgainstTable(){
+        const firstTableCard = this.room.firstTableCard;
+        const a = {
+            2:["2"],
+            3:["2","3","4","5","6","7","8","9","10"],
+            4:["2","4","5","6","7","8","9","10"],
+            5:["2","5","6","7","8","9","10"],
+            6:["2","6","7","8","9","10"],
+            7:["2","7","8","9","10","J","Q","K"],
+            8:["2","8","9","10","J","Q","K"],
+            9:["2","9","10","J","Q","K"],
+            10:[],
+            J:["2","J","Q","K","A"],
+            Q:["2","Q","K","A"],
+            K:["2","K","A"],
+            A:[]
+        }
+
+        if(firstTableCard){
+            this.cards.map(card => card.disableCard())
+            this.cards
+                .filter(card => a[firstTableCard.value].includes(card.value))
+                .map(c => c.enableCard())
+        }else{
+            this.enableCards();
+        }
+
+    }
+
+    PH_changeCards(cards){
+            const all = [...cards, ...this.room.table.reverse()];
+            const fourCardsSame = all.length >= 4 && all
+            .filter((c,i, s) => i < 4)
+            .every(c => c.rank === all[0].rank)
+        cards.map(card => {
+            const newCard = new Card(card.landId, card.rank);
+            this.giveCard(newCard);
+            this.cards.length < 5 && this.receiveCard(this.room.giveCard());
+        });
+        this.enableCards();
+        if(fourCardsSame){
+            this.room.trashTable();
+            this.broadcastGame();
+        }else{
+            this.room.setNextTurn();
+        }
+    }
+
+    PH_takeCard(){
+        this.receiveCard(this.room.giveCard());
+        this.cardTaken = true;
+        this.PH_checkHandAgainstTable();
+        this.emitGame();
+    }
+
+
     giveCard(card){
         // const givenCard = this.findCard(card);
         this.deleteCard(card);
+        this.room.receiveCard(card); 
     }
 
     changeCards(cards){
         (cards || []).map(card => {
-            this.giveCard(card);
+            const newCard = new Card(card.landId, card.rank);
+            this.giveCard(newCard);
             this.receiveCard(this.room.giveCard());
         });
         this.cardsChanged = true;
@@ -200,7 +310,7 @@ export default class Socket {
     }
 
     receiveCard(card){
-        this.cards.push(card);
+        if(card) this.cards.push(card);
     }
     
     joinRoom(room, cb){
@@ -224,10 +334,10 @@ export default class Socket {
     }
 
     emitSocket(){
-        this.socket.emit('get socket', this.getSocket());
+        this.socket.emit('get socket', this.getSelf());
     }
 
-    emitGame(game = this.room.getRoom()){
+    emitGame(game = this.room.getSelf()){
         this.socket.emit('get game', game);
     }
 
@@ -245,6 +355,6 @@ export default class Socket {
     }
 
     broadcastGame(){
-        io.sockets.in(this.room.id).emit('get game', this.room.getRoom())
+        io.sockets.in(this.room.id).emit('get game', this.room.getSelf())
     }
 }

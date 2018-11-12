@@ -1,12 +1,30 @@
-import {Game, Room, Bot} from './';
+import {Game, Room, Bot, Tikkipokeri, Paskahousu} from './';
+// import Tikkipokeri from './Tikkipokeri';
 
 export default class Queue extends Room {
-    constructor(name, id, playersAmount){
-        super(name, id, playersAmount);
+    constructor(name, id, config){
+        super(name, id, config);
         this.type = "queue";
         this.players = [];
-        this.playersAmount = playersAmount;
+        this.playersAmount = config.playersAmount;
         this.online = true;
+        this.config = {
+            gameType:config.gameType || "paskahousu",
+            bet:config.bet || 50,
+            playersAmount:config.playersAmount || 2,
+            pointLimit:config.pointLimit || 1,
+            createdByUser:config.createdByUser
+        };
+    }
+
+    getSelf(){
+        return {
+            id: this.id,
+            name:this.name,
+            type:this.type,
+            players:this.formatPlayers(),
+            config:this.config
+        }
     }
 
     addPlayer(player, cb){
@@ -27,9 +45,28 @@ export default class Queue extends Room {
         this.startGame()
     }
 
+    removePlayer(player){
+        let {rooms} = require('../common');
+        if(this.players.length === 1 && this.config.createdByUser){
+            delete rooms[this.id];
+        }else{
+            this.players = this.players.filter(p => p.id !== player.id);
+        }
+
+    }
+
     startGame(){
         const gameId = Math.random();
-        const newGame = new Game(gameId, `Peli-${parseFloat(gameId, 3)}`, this.players, this.playersAmount);
+        let newGame;
+        switch(this.config.gameType){
+            case 'paskahousu':
+                newGame = new Paskahousu(gameId, `Peli-${parseFloat(gameId, 3)}`, this.players, this.config);
+                break;
+            default:
+               newGame = new Tikkipokeri(gameId, `Peli-${parseFloat(gameId, 3)}`, this.players, this.config);
+               break;
+        }   
+
         let {rooms} = require('../common')
         rooms[gameId] = newGame;
         this.players.map(player => {
@@ -38,6 +75,7 @@ export default class Queue extends Room {
                 player.emitSocket();
             });
         });
+        this.config.createdByUser && delete rooms[this.id];
         this.players = [];
     }
 }

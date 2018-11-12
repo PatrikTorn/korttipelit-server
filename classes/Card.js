@@ -10,6 +10,7 @@ const imageFormat = '.png';
 
 export default class Card {
     constructor(landId, rank){
+        this.landId = landId;
         this.rank = rank;
         this.value = values[rank];
         this.land = lands[landId];
@@ -24,6 +25,7 @@ export default class Card {
 
     getCard(){
         return {
+            landId:this.landId,
             rank:this.rank,
             color:this.color,
             id:this.id,

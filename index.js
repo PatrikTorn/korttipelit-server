@@ -1,5 +1,5 @@
 import {server, io, app} from './config';
-import {Socket} from './classes';
+import {Socket, Queue} from './classes';
 import {sockets, rooms} from './common'
 import {checkPlayer} from './services/PlayerService';
 
@@ -19,8 +19,7 @@ function removeSocket(socket){
 }
 
 io.on('connection', (socket) => {
-    const thisSocket = addSocket(socket);
-
+    let thisSocket = addSocket(socket);
     socket.on('set name', async(name) => {
         try{
             const data = await checkPlayer(name);
@@ -32,16 +31,23 @@ io.on('connection', (socket) => {
     })
 
     socket.on('join room', (roomName) => {
-        thisSocket.joinRoom(rooms[roomName], () => {
+        console.log(thisSocket.socketType);
+        const newRoom = rooms[roomName];
+        thisSocket.joinRoom(newRoom, () => {
             thisSocket.emitAll();
         });
     });
 
+    socket.on('create room', ({id, name, playersAmount, bet, pointLimit, gameType}) => {
+        rooms[id] = new Queue(id, name, {playersAmount, bet, pointLimit, gameType, createdByUser:true});
+        thisSocket.joinRoom(rooms[id], () => {
+            thisSocket.emitRooms();
+            thisSocket.emitSocket();
+        });
+    })
+
     socket.on('play offline', () => {
         thisSocket.room.playOffline();
-        // thisSocket.emitAll();
-        // thisSocket.broadcastGame();
-        console.log(thisSocket.room);
     });
 
     socket.on('change cards', (cards) => {
@@ -49,6 +55,23 @@ io.on('connection', (socket) => {
         thisSocket.room.setNextTurn();
         thisSocket.broadcastGame();
     });
+
+    socket.on('PH click card', (card) => {
+        thisSocket.PH_clickCard(card);
+    });
+
+    socket.on('PH change cards', (cards) => {
+        thisSocket.PH_changeCards(cards);
+    });
+
+    socket.on('PH take card', () => {
+        thisSocket.PH_takeCard();
+    });
+
+    socket.on('PH take table', () => {
+        thisSocket.room.giveTable(thisSocket);
+    });
+
 
     socket.on('miss turn', () => {
         thisSocket.room.moveBot(thisSocket);

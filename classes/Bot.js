@@ -43,15 +43,12 @@ export default class Bot extends Socket{
     }
 
     emitSocket(){
-        // this.socket.emit('get socket', this.getSocket());
     }
 
-    emitGame(game = this.room.getRoom()){
-        // this.socket.emit('get game', game);
+    emitGame(game = this.room.getSelf()){
     }
 
     
     resetGame(){
-        // this.socket.emit('reset game');
     }
 }
