@@ -25,10 +25,6 @@ export default class Bot extends Socket{
     }
 
     // tableCard(){
-    //     this.cardTabled = true;
-    //     console.log('should table');
-    //     console.log(this.cards);
-
     // }
 
     exitGame() {

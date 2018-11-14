@@ -31,7 +31,6 @@ io.on('connection', (socket) => {
     })
 
     socket.on('join room', (roomName) => {
-        console.log(thisSocket.socketType);
         const newRoom = rooms[roomName];
         thisSocket.joinRoom(newRoom, () => {
             thisSocket.emitAll();
@@ -50,35 +49,46 @@ io.on('connection', (socket) => {
         thisSocket.room.playOffline();
     });
 
-    socket.on('change cards', (cards) => {
-        thisSocket.changeCards(cards);
-        thisSocket.room.setNextTurn();
-        thisSocket.broadcastGame();
-    });
+    // Paskahousu emits
 
     socket.on('PH click card', (card) => {
-        thisSocket.PH_clickCard(card);
+        thisSocket.room.PH_clickCard(card);
     });
 
     socket.on('PH change cards', (cards) => {
-        thisSocket.PH_changeCards(cards);
+        thisSocket.room.PH_changeCards(cards);
     });
 
     socket.on('PH take card', () => {
-        thisSocket.PH_takeCard();
+        thisSocket.room.PH_takeCard();
     });
 
     socket.on('PH take table', () => {
         thisSocket.room.giveTable(thisSocket);
     });
 
+    socket.on('MM click card', (card) => {
+        thisSocket.room.clickCard(card);
+    });
+
+    socket.on('MM change cards', (cards) => {
+        thisSocket.room.changeCards(cards);
+    });
+
+    // Tikkipokeri emits
+
+    socket.on('change cards', (cards) => {
+        thisSocket.room.changeCards(cards);
+        thisSocket.room.setNextTurn();
+        thisSocket.broadcastGame();
+    });
 
     socket.on('miss turn', () => {
         thisSocket.room.moveBot(thisSocket);
     })
 
     socket.on('select card', (card) => {
-        thisSocket.selectCard(card);
+        thisSocket.room.selectCard(card);
         thisSocket.emitGame();
     });
 

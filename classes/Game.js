@@ -9,7 +9,7 @@ export default class Game extends Room {
         this.playersAmount = playersAmount;
         this.cards = [];
         this.table = [];
-        this.turn = players[0].id;
+        this.turn = players[0];
         this.shuffleDeck();
         this.setTimer();
     }
@@ -23,7 +23,7 @@ export default class Game extends Room {
             trash:this.trash,
             cards:this.cards,
             players:this.formatPlayers(),
-            turn:this.turn,
+            turn:this.turn.id,
             timer:this.timer
         }
     }
@@ -46,14 +46,16 @@ export default class Game extends Room {
     }
 
     getNextPlayer(){
-        const playerId = this.turn;
-        const thisPlayers = this.players.map(player => player.id);
-        const thisIndex = thisPlayers.indexOf(playerId);
+        // const playerId = this.turn;
+        // const thisPlayers = this.players.map(player => player.id);
+        const thisIndex = this.players.findIndex(p => p.id === this.turn.id);
         this.setTimer();
-        if(playerId === thisPlayers[thisPlayers.length - 1]){
-            return thisPlayers[0];
+        
+        if(this.turn.id === this.players[this.players.length - 1].id){
+            
+            return this.players[0];
         }else{
-            return thisPlayers[thisIndex + 1];
+            return this.players[thisIndex + 1];
         }
     }
 

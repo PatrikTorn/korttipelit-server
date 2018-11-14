@@ -30,8 +30,9 @@ export default class Room {
         cb();
     }
 
-    findPlayer(player){
-        return this.players.find(p => p.id === player.id);
+    findPlayer(playerId){
+        const foundPlayer = this.players.find(p => p.id === playerId);
+        return foundPlayer
     }
 
     removePlayer(player){

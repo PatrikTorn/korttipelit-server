@@ -4,9 +4,11 @@ export {default as Card} from './Card';
 export {default as Room} from './Room'
     export {default as Queue} from './Queue'
     export {default as Game} from './Game'
+        export {default as Mustamaija} from './Mustamaija'
         export {default as Tikkipokeri} from './Tikkipokeri'
         export {default as Paskahousu} from './Paskahousu'
 
 // Users
 export {default as Socket} from './Socket'
+    export {default as TikkipokeriPlayer} from './TikkipokeriPlayer'
     export {default as Bot} from './Bot'

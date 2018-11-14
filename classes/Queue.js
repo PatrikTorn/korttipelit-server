@@ -1,4 +1,4 @@
-import {Game, Room, Bot, Tikkipokeri, Paskahousu} from './';
+import {Game, Room, Bot, Tikkipokeri, Paskahousu, Mustamaija} from './';
 // import Tikkipokeri from './Tikkipokeri';
 
 export default class Queue extends Room {
@@ -56,11 +56,15 @@ export default class Queue extends Room {
     }
 
     startGame(){
+        let {sockets} = require('../common');
         const gameId = Math.random();
         let newGame;
         switch(this.config.gameType){
             case 'paskahousu':
                 newGame = new Paskahousu(gameId, `Peli-${parseFloat(gameId, 3)}`, this.players, this.config);
+                break;
+            case 'mustamaija':
+                newGame = new Mustamaija(gameId, `Peli-${parseFloat(gameId, 3)}`, this.players, this.config);
                 break;
             default:
                newGame = new Tikkipokeri(gameId, `Peli-${parseFloat(gameId, 3)}`, this.players, this.config);

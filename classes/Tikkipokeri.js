@@ -1,4 +1,5 @@
 import Game from './Game';
+import Card from './Card';
 import {getPokerWinner} from '../gameTools'
 
 export default class Tikkipokeri extends Game {
@@ -12,7 +13,7 @@ export default class Tikkipokeri extends Game {
         this.playersAmount = config.playersAmount;
 
         this.cards = [];
-        this.turn = players[0].id;
+        this.turn = players[0];
         this.shuffleDeck();
         this.land = null;
         this.leader = {
@@ -35,7 +36,7 @@ export default class Tikkipokeri extends Game {
             gameType:this.gameType,
             cards:this.cards,
             players:this.formatPlayers(),
-            turn:this.turn,
+            turn:this.turn.id,
             land:this.land,
             tikkiStarted:this.tikkiStarted,
             tikkiRoundWinner:this.tikkiRoundWinner,
@@ -45,6 +46,21 @@ export default class Tikkipokeri extends Game {
             moneyExchange:this.moneyExchange,
             timer:this.timer
         }
+    }
+
+    
+    selectCard(card){
+        const thisCard = this.turn.findCard(card);
+        thisCard.selected = !thisCard.selected;
+    }
+
+    changeCards(cards){
+        (cards || []).map(card => {
+            const newCard = new Card(card.landId, card.rank);
+            this.turn.giveCard(newCard);
+            this.turn.receiveCard(this.giveCard());
+        });
+        this.turn.cardsChanged = true;
     }
 
     revealHands(){
@@ -97,7 +113,6 @@ export default class Tikkipokeri extends Game {
     }
 
     resetGame(){
-        const tikkiWinner = this.tikkiWinner;
         this.tikkiStarted = false;
         this.tikkiRoundWinner = null;
         this.tikkiWinner = null;
@@ -106,7 +121,7 @@ export default class Tikkipokeri extends Game {
         this.players.map(player => player.disableCardsChanged());
         this.shuffleDeck();
         this.deal();
-        while (this.players.find(player => player.id === this.turn).type !== "human"){
+        while (this.players.find(player => player.id === this.turn.id).type !== "human"){
             this.turn = this.getNextPlayer()
         }
         this.broadcastGame();
@@ -146,7 +161,8 @@ export default class Tikkipokeri extends Game {
                 },5000)
 
             }
-            this.turn = this.leader.playerId;
+            this.turn = this.findPlayer(this.leader.playerId);
+                
             this.setTimer();
             this.tikkiRoundWinner = this.leader.playerId;
             this.setLand(null);
@@ -158,19 +174,18 @@ export default class Tikkipokeri extends Game {
         }else{
             if(cardsChanged && !cardsTabled){
                 this.tikkiStarted = true;
-                if(this.turn === this.tikkiRoundWinner){
-                    this.players.filter(player => player.id !== this.turn)
+                if(this.tikkiRoundWinner && this.turn.id === this.findPlayer(this.tikkiRoundWinner).id){
+                    this.players.filter(player => player.id !== this.turn.id)
                     .map(player => player.tableCard(null));
                 }
             }
             this.turn = this.getNextPlayer();
         }
-
-        const nextPlayer = this.players.find(player => player.id === this.turn)
-        const isBotTurn = nextPlayer.type === "bot";
+        // const nextPlayer = this.findPlayer(this.turn.id)
+        const isBotTurn = this.turn.type === "bot";
         if(isBotTurn && !cardsEnded){
-            this.moveBot(nextPlayer)
-        }    
+            this.moveBot(this.turn)
+        }  
     }
 
     moveBot(bot){
