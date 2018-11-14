@@ -37,6 +37,7 @@ io.on('connection', (socket) => {
         });
     });
 
+    
     socket.on('create room', ({id, name, playersAmount, bet, pointLimit, gameType}) => {
         rooms[id] = new Queue(id, name, {playersAmount, bet, pointLimit, gameType, createdByUser:true});
         thisSocket.joinRoom(rooms[id], () => {
