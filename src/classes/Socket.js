@@ -60,6 +60,17 @@ export default class Socket {
         }
     }
 
+    getExp(){
+        const experiences = {
+            task:3,
+            game: (bet, won) => (bet/100) * (won ? 5 : 2)
+        }
+        let exp;
+        const levelDeg = Math.pow((1/300)*exp, 2) + (1/50)*exp;
+        const level = Math.floor(levelDeg);
+
+    }
+
     // Common functions
 
     getRooms(){

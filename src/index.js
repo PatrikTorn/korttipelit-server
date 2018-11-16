@@ -30,6 +30,11 @@ io.on('connection', (socket) => {
         }
     })
 
+    socket.on('logout', () => {
+        removeSocket(thisSocket);
+        thisSocket.emitAll();
+    })
+
     socket.on('join room', (roomName) => {
         const newRoom = rooms[roomName];
         thisSocket.joinRoom(newRoom, () => {
@@ -38,11 +43,18 @@ io.on('connection', (socket) => {
     });
 
     socket.on('create room', ({id, name, playersAmount, bet, pointLimit, gameType}) => {
-        rooms[id] = new Queue(id, name, {playersAmount, bet, pointLimit, gameType, createdByUser:true});
-        thisSocket.joinRoom(rooms[id], () => {
-            thisSocket.emitRooms();
-            thisSocket.emitSocket();
-        });
+        if(id in rooms){
+            thisSocket.joinRoom(rooms[id], () => {
+                thisSocket.emitAll();
+            });
+        }else{
+            rooms[id] = new Queue(id, name, {playersAmount, bet, pointLimit, gameType, createdByUser:true});
+            thisSocket.joinRoom(rooms[id], () => {
+                thisSocket.emitRooms();
+                thisSocket.emitSocket();
+            });
+        }
+
     })
 
     socket.on('play offline', () => {

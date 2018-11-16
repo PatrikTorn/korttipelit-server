@@ -1,4 +1,5 @@
 import ps from 'pokersolver'; 
+import botNames from './botNames.json'
 const PokerSolver = ps.Hand;
 
 
@@ -85,6 +86,8 @@ const hands = {
     }
 };
 
+export const botName = 'Bot-'+botNames[Math.floor(Math.random()*botNames.length)-1]
+
 function rankPokerHand(cards){
     if(cards.length === 5){
         const hand = JSON.parse(JSON.stringify(PokerSolver.solve(cards)))
@@ -113,6 +116,8 @@ function getPokerWinner(players){
     const winner = PokerSolver.winners(handz)[0].owner;
     return players.find(p => p.id === winner);
 }
+
+
 
 export {
     rankPokerHand,
