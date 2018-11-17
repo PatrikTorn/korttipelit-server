@@ -12,13 +12,36 @@ const playerSchema = new mongoose.Schema({
         default:500,
         type:Number
     },
+    experience:{
+        type:Number,
+        required:false,
+        default:0
+    },
+    level:{
+        type:Number,
+        required:false,
+        default:1
+    },
+    games:{
+        type:Array,
+        required:false
+    },
+    tasks:{
+        type:Array,
+        required:false
+    },
     gamesPlayed:{
         default:0,
         type:Number
     },
     highestHand:{
-        type:Number,
-        default:0
+        type:Map,
+        default:{
+            hand:[],
+            rank:0,
+            name:null,
+            points:0
+        }
     }
 });
 

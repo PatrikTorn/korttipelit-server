@@ -33,13 +33,17 @@ io.on('connection', (socket) => {
     socket.on('logout', () => {
         removeSocket(thisSocket);
         thisSocket.emitAll();
-    })
+    });
 
     socket.on('join room', (roomName) => {
         const newRoom = rooms[roomName];
         thisSocket.joinRoom(newRoom, () => {
             thisSocket.emitAll();
         });
+    });
+
+    socket.on('exit game', () => {
+        thisSocket.exitGame();
     });
 
     socket.on('create room', ({id, name, playersAmount, bet, pointLimit, gameType}) => {

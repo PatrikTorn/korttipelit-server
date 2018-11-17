@@ -8,9 +8,13 @@ export default class Socket {
         // db
         this.money = 99999;
         this.name = null;
+        this.level = 1;
+        this.experience = 0;
         this.uuid = null;
         this.gamesPlayed = 0;
         this.highestHand = 0;
+        this.games = [];
+        this.tasks = [];
 
         // socket
         this.socket = socket;
@@ -45,6 +49,12 @@ export default class Socket {
             id:this.id,
             type:this.type,
             money:this.money,
+            games:this.games,
+            tasks:this.tasks,
+            experience:this.experience,
+            level:this.level,
+            levelDeg:this.levelDeg,
+            stats:this.getExp(),
             cards:this.cards.sort((a,b) => b.rank-a.rank),
             table:this.table,
             cardsChanged:this.cardsChanged,
@@ -61,13 +71,23 @@ export default class Socket {
     }
 
     getExp(){
-        const experiences = {
-            task:3,
-            game: (bet, won) => (bet/100) * (won ? 5 : 2)
+        const exps = {
+            game: ({bet, gameWon}) => (bet/100) * (gameWon ? 5 : 2)
         }
-        let exp;
-        const levelDeg = Math.pow((1/300)*exp, 2) + (1/50)*exp;
+        let exp = 0;
+        this.games.map(game => {
+            exp += exps.game(game)
+        });
+        const expDeg = (level) => Math.pow(level, 1.6/1);
+        const levelDeg = Math.pow(exp, 1/1.6);
         const level = Math.floor(levelDeg);
+        const expToNextLevel = expDeg(level+1) - exp;
+        return {
+            levelDeg,
+            level,
+            experience:exp,
+            expToNextLevel
+        }
 
     }
 
@@ -94,12 +114,16 @@ export default class Socket {
         PlayerService.updatePlayer(this.getSelf())
     }
 
-    initPlayer({name, _id, money, gamesPlayed, highestHand}){
+    initPlayer({name, _id, money, gamesPlayed, highestHand, games, tasks, experience, level}){
         this.name = name;
         this.uuid = _id;
         this.money = money;
         this.highestHand = highestHand;
         this.gamesPlayed = gamesPlayed;
+        this.games = games;
+        this.tasks = tasks;
+        this.experience = experience;
+        this.level = level;
     }
     
     addPoints(points){
@@ -166,11 +190,22 @@ export default class Socket {
     }
 
     setStats(){
-        const handRank = this.getHand().rank;
-        if(handRank > this.highestHand){
-            this.highestHand = handRank;
+        if(this.room.gameType === 'tikkipokeri'){
+            if(this.getHand().rank > this.highestHand.rank){
+                this.highestHand = this.getHand();
+            }
         }
         this.gamesPlayed = this.gamesPlayed + 1;
+        const thisGame = {
+            name:this.room.name,
+            gameType:this.room.gameType,
+            playersAmount:this.room.playersAmount,
+            gameWon:this.room.gameLeader.id === this.id,
+            moneyExchange:this.room.moneyExchange,
+            date: new Date().toISOString(),
+            bet: this.room.bet
+        };
+        this.games = [...this.games, thisGame];
         this.persistPlayer();
     }
 
@@ -183,6 +218,7 @@ export default class Socket {
             this.points = 0;
             this.firstTableCard = null;
             this.shouldRevealHand = false;
+            this.cardTaken = false;
             this.emitAll();
             this.resetGame()
         })

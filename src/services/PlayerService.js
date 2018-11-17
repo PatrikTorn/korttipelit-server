@@ -18,7 +18,11 @@ async function updatePlayer(player){
         {
             money:player.money,
             gamesPlayed:player.gamesPlayed,
-            highestHand:player.highestHand
+            highestHand:player.highestHand,
+            tasks:player.tasks,
+            games:player.games,
+            experience:player.experience,
+            level:player.level
         },
         {new: false},
     );

@@ -4,6 +4,7 @@ import Card from './Card';
 export default class Paskahousu extends Game {
     constructor(id, name, players, config){
         super(id, name, players, config);
+        this.bet = config.bet;
         this.gameType = "paskahousu";
         this.playersAmount = config.playersAmount;
         this.turn = players[0];
@@ -25,7 +26,9 @@ export default class Paskahousu extends Game {
             table:this.table,
             firstTableCard:this.firstTableCard && this.firstTableCard,
             players:this.formatPlayers(),
-            turn:this.turn.id
+            turn:this.turn.id,
+            bet:this.bet,
+            playersAmount:this.playersAmount
         }
     }
 
@@ -46,10 +49,22 @@ export default class Paskahousu extends Game {
         this.table = [];
         this.trash = [];
         this.firstTableCard = null;
-        winner.points += 2;
-        this.shuffleDeck();
-        this.deal();
+        this.gameLeader = winner;
+        winner.points += 1;
+        this.players.map(player => {
+            winner.earnMoney(player);
+            player.setStats();
+        });
         this.broadcastGame();
+        
+        setTimeout(() => {
+            this.players.map(player => {
+                player.exitGame();
+            });
+        }, 5000);
+        // this.shuffleDeck();
+        // this.deal();
+        // this.broadcastGame();
     }
 
     setNextTurn(){

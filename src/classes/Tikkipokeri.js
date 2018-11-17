@@ -26,6 +26,7 @@ export default class Tikkipokeri extends Game {
         this.pokerWinner = null;
         this.gameWinner = null;
         this.moneyExchange = null;
+        this.gameLeader = players[0];
     }
 
     getSelf(){
@@ -35,6 +36,8 @@ export default class Tikkipokeri extends Game {
             type:this.type,
             gameType:this.gameType,
             cards:this.cards,
+            bet:this.bet,
+            pointLimit:this.pointLimit,
             players:this.formatPlayers(),
             turn:this.turn.id,
             land:this.land,
@@ -43,7 +46,8 @@ export default class Tikkipokeri extends Game {
             tikkiWinner:this.tikkiWinner && this.tikkiWinner.getSelf(),
             pokerWinner:this.pokerWinner && this.pokerWinner.getSelf(),
             gameWinner:this.gameWinner,
-            moneyExchange:this.moneyExchange,
+            moneyExchange:this.getMoneyExchange(),
+            gameLeader:this.getGameLeader().getSelf(),
             timer:this.timer
         }
     }
@@ -127,14 +131,22 @@ export default class Tikkipokeri extends Game {
         this.broadcastGame();
     }
 
+    getGameLeader(){
+        return this.players.sort((a,b) => b.points-a.points)[0];
+    }
+
+    getMoneyExchange(){
+        return this.players.map(player => ({name:player.name, money:(this.getGameLeader().points - player.points)*this.bet, points:player.points}));
+    }
+
     finishGame(){
-        const winner = this.players.sort((a,b) => b.points-a.points)[0];
+        const winner = this.getGameLeader()
+        this.gameWinner = winner.getSelf();
+        this.moneyExchange = this.getMoneyExchange();
         this.players.map(player => {
             winner.earnMoney(player);
             player.setStats();
         });
-        this.gameWinner = winner.getSelf();
-        this.moneyExchange = this.players.map(player => ({...player.getSelf(), money:(winner.points - player.points)*this.bet}));
         this.broadcastGame();
         
         setTimeout(() => {
