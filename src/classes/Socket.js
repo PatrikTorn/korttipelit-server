@@ -8,6 +8,8 @@ export default class Socket {
         // db
         this.money = 99999;
         this.name = null;
+        this.fbId = null;
+        this.password = null;
         this.level = 1;
         this.experience = 0;
         this.uuid = null;
@@ -45,6 +47,8 @@ export default class Socket {
                 name:this.room.name
             },
             name:this.name,
+            fbId:this.fbId,
+            password:this.password,
             uuid:this.uuid,
             id:this.id,
             type:this.type,
@@ -114,9 +118,11 @@ export default class Socket {
         PlayerService.updatePlayer(this.getSelf())
     }
 
-    initPlayer({name, _id, money, gamesPlayed, highestHand, games, tasks, experience, level}){
+    initPlayer({name, _id, fbId, password, money, gamesPlayed, highestHand, games, tasks, experience, level}){
         this.name = name;
         this.uuid = _id;
+        this.password = password;
+        this.fbId = fbId;
         this.money = money;
         this.highestHand = highestHand;
         this.gamesPlayed = gamesPlayed;

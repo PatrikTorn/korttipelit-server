@@ -1,7 +1,7 @@
 import {server, io, app} from './config';
 import {Socket, Queue} from './classes';
 import {sockets, rooms} from './common'
-import {checkPlayer, getPlayers} from './services/PlayerService';
+import {checkPlayer, getPlayers, findPlayer, createPlayer} from './services/PlayerService';
 
 const port = process.env.PORT || 4000;
 
@@ -36,6 +36,37 @@ io.on('connection', (socket) => {
         }
     })
 
+    socket.on('login', async({name, password, fbId}) => {
+        try{
+            let data;
+            if(fbId){
+                const foundUser = await findPlayer({fbId});
+                if(foundUser){
+                    data = foundUser;
+                }else{
+                    data = await createPlayer({name, fbId});
+                }
+            }else{
+                data = await findPlayer({name, password});
+            }
+            thisSocket.initPlayer(data);
+            thisSocket.emitAll();
+        }catch(e){
+            console.log(e);
+        }
+    });
+
+    socket.on('register', async({name, password}) => {
+        try{
+            const data = await createPlayer({name, password});
+            thisSocket.initPlayer(data);
+            thisSocket.emitAll();
+        }catch(e){
+            console.log(e);
+        }
+    });
+
+    // Not in use
     socket.on('logout', () => {
         removeSocket(thisSocket);
         thisSocket.emitAll();

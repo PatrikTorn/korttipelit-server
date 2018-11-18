@@ -1,19 +1,15 @@
 import {PlayerModel as Player} from '../models';
 
-async function createPlayer(playerName){
-    return await Player.create({
-        name:playerName
-    });
+async function createPlayer(params){
+    return await Player.create(params);
 }
 
 async function getPlayers(){
     return await Player.find()
 }
 
-async function findPlayer(playerName){
-    return await Player.findOne({
-        name:playerName
-    });
+async function findPlayer(params){
+    return await Player.findOne(params);
 }
 
 async function updatePlayer(player){
@@ -33,11 +29,11 @@ async function updatePlayer(player){
 }
 
 async function checkPlayer(name) {
-    const foundUser = await findPlayer(name);
+    const foundUser = await findPlayer({name});
     if(foundUser){
         return foundUser;
     }else{
-        return await createPlayer(name);
+        return await createPlayer({name});
     }
 }
 

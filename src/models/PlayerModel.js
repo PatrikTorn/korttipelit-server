@@ -7,6 +7,14 @@ const playerSchema = new mongoose.Schema({
         type:String,
         unique:true
     },
+    password: {
+        required:false,
+        type:String
+    },
+    fbId:{
+        required:false,
+        type:String
+    },
     money:{
         required:false,
         default:500,
