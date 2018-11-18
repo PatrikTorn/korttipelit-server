@@ -6,6 +6,10 @@ async function createPlayer(playerName){
     });
 }
 
+async function getPlayers(){
+    return await Player.find()
+}
+
 async function findPlayer(playerName){
     return await Player.findOne({
         name:playerName
@@ -41,5 +45,6 @@ export{
     checkPlayer,
     createPlayer,
     findPlayer,
-    updatePlayer
+    updatePlayer,
+    getPlayers
 }

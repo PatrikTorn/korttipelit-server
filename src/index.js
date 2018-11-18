@@ -1,7 +1,7 @@
 import {server, io, app} from './config';
 import {Socket, Queue} from './classes';
 import {sockets, rooms} from './common'
-import {checkPlayer} from './services/PlayerService';
+import {checkPlayer, getPlayers} from './services/PlayerService';
 
 const port = process.env.PORT || 4000;
 
@@ -17,6 +17,12 @@ function removeSocket(socket){
     socket.leaveRoom();
     delete sockets[socket.id];
 }
+
+app.get('/players', async(req, res) => {
+    const players = await getPlayers();
+    res.json(players)
+});
+
 
 io.on('connection', (socket) => {
     let thisSocket = addSocket(socket);
