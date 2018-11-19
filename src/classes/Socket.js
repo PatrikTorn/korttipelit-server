@@ -98,7 +98,7 @@ export default class Socket {
     // Common functions
 
     getRooms(){
-        return Object.values(this.rooms).map(room => room.getSelf())
+        return Object.values(this.rooms).filter(r => r.getSelf).map(room => room.getSelf())
     }
 
     earnMoney(player){
