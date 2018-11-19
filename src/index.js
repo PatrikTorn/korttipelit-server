@@ -89,7 +89,8 @@ io.on('connection', (socket) => {
     socket.on('create room', ({id, name, playersAmount, bet, pointLimit, gameType}) => {
         if(id in rooms){
             thisSocket.joinRoom(rooms[id], () => {
-                thisSocket.emitAll();
+                thisSocket.emitRooms();
+                thisSocket.emitSocket();
             });
         }else{
             rooms[id] = new Queue(id, name, {playersAmount, bet, pointLimit, gameType, createdByUser:true});
