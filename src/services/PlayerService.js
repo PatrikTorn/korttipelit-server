@@ -37,10 +37,15 @@ async function checkPlayer(name) {
     }
 }
 
+async function removeAll(){
+    Player.remove();
+}
+
 export{
     checkPlayer,
     createPlayer,
     findPlayer,
     updatePlayer,
-    getPlayers
+    getPlayers,
+    removeAll
 }

@@ -47,7 +47,7 @@ export default class Tikkipokeri extends Game {
             pokerWinner:this.pokerWinner && this.pokerWinner.getSelf(),
             gameWinner:this.gameWinner,
             moneyExchange:this.getMoneyExchange(),
-            gameLeader:this.getGameLeader().getSelf(),
+            gameLeader:this.players[0].getSelf(),
             timer:this.timer
         }
     }

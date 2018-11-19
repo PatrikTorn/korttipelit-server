@@ -1,7 +1,7 @@
 import {server, io, app} from './config';
 import {Socket, Queue} from './classes';
 import {sockets, rooms} from './common'
-import {checkPlayer, getPlayers, findPlayer, createPlayer} from './services/PlayerService';
+import {checkPlayer, getPlayers, findPlayer, createPlayer, removeAll} from './services/PlayerService';
 
 const port = process.env.PORT || 4000;
 
@@ -43,9 +43,12 @@ io.on('connection', (socket) => {
                 const foundUser = await findPlayer({fbId});
                 if(foundUser){
                     data = foundUser;
+                    console.log('found')
                 }else{
                     data = await createPlayer({name, fbId});
+                    console.log('not found')
                 }
+                console.log(data)
             }else{
                 data = await findPlayer({name, password});
             }
