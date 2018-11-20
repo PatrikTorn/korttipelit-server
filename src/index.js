@@ -171,9 +171,10 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', (reason) => {
         console.log('disconnected', reason);
-
-        removeSocket(thisSocket);
-        thisSocket.emitAll();
+        if(reason !== "ping timeout"){
+            removeSocket(thisSocket);
+            thisSocket.emitAll();
+        }
     })
 });
 
