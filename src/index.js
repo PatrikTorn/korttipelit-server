@@ -171,6 +171,7 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', (reason) => {
         console.log('disconnected', reason);
+
         removeSocket(thisSocket);
         thisSocket.emitAll();
     })

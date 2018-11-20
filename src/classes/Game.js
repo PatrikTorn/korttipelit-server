@@ -62,7 +62,7 @@ export default class Game extends Room {
     removePlayer(player){
         let {rooms} = require('../common');
         this.players = this.players.filter(p => p.id !== player.id);
-        if(this.playersCount() === 1){
+        if(this.playersCount() === 1 || this.players.every(p => p.type === "bot")){
             this.players[0].exitGame();
             delete rooms[this.id];
         }else{
