@@ -23,9 +23,21 @@ app.get('/players', async(req, res) => {
     res.json(players)
 });
 
+// middleware
+// io.use((socket, next) => {
+//     let token = socket.handshake.query.token;
+//     console.log(token);
+//     return next();
+    // if (isValid(token)) {
+    //   return next();
+    // }
+    // return next(new Error('authentication error'));
+// });
+
 
 io.on('connection', (socket) => {
     let thisSocket = addSocket(socket);
+    console.log('connected', Object.values(sockets).length);
     socket.on('set name', async(name) => {
         try{
             const data = await checkPlayer(name);
@@ -43,12 +55,9 @@ io.on('connection', (socket) => {
                 const foundUser = await findPlayer({fbId});
                 if(foundUser){
                     data = foundUser;
-                    console.log('found')
                 }else{
                     data = await createPlayer({name, fbId});
-                    console.log('not found')
                 }
-                console.log(data)
             }else{
                 data = await findPlayer({name, password});
             }
@@ -155,7 +164,13 @@ io.on('connection', (socket) => {
         thisSocket.broadcastGame();
     });
 
-    socket.on('disconnect', () => {
+    socket.on('reconnect_attempt', () => {
+        console.log("Reconnect attempt")
+        socket.io.opts.transports = ['polling', 'websocket'];
+    });
+
+    socket.on('disconnect', (reason) => {
+        console.log('disconnected', reason);
         removeSocket(thisSocket);
         thisSocket.emitAll();
     })
