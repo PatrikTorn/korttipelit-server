@@ -145,7 +145,8 @@ export default class Socket {
     }
 
     deleteCard(card){
-        this.cards = this.cards.filter(c => c.id !== card.id);
+        if(card)
+            this.cards = this.cards.filter(c => c.id !== card.id);
     }
 
     enableCards(){
