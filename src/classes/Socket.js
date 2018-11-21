@@ -129,13 +129,12 @@ export default class Socket {
         PlayerService.updatePlayer(this.getSelf())
     }
 
-    initPlayer({name, _id, fbId, password, money, gamesPlayed, notificationToken,
+    initPlayer({name, _id, fbId, password, money, gamesPlayed, 
          highestHand, games, tasks, experience, level}){
         this.name = name;
         this.uuid = _id;
         this.password = password;
         this.fbId = fbId;
-        this.notificationToken = notificationToken;
         this.money = money;
         this.highestHand = highestHand;
         this.gamesPlayed = gamesPlayed;
@@ -143,6 +142,8 @@ export default class Socket {
         this.tasks = tasks;
         this.experience = experience;
         this.level = level;
+        PlayerService.updateNotificationToken(this.getSelf());
+        
     }
     
     addPoints(points){

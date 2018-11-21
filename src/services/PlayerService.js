@@ -28,6 +28,16 @@ async function updatePlayer(player){
     );
 }
 
+async function updateNotificationToken(player){
+    return await Player.findByIdAndUpdate(
+        player.uuid,
+        {
+            notificationToken:player.notificationToken
+        },
+        {new: false},
+    );
+}
+
 async function checkPlayer(name) {
     const foundUser = await findPlayer({name});
     if(foundUser){
@@ -46,6 +56,7 @@ export{
     createPlayer,
     findPlayer,
     updatePlayer,
+    updateNotificationToken,
     getPlayers,
     removeAll
 }
