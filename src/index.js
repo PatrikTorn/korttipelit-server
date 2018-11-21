@@ -38,6 +38,10 @@ app.get('/players', async(req, res) => {
 io.on('connection', (socket) => {
     let thisSocket = addSocket(socket);
     console.log('connected', Object.values(sockets).length);
+    
+    socket.on('set notification token', (token) => {
+        thisSocket.setNotificationToken(token);
+    })
     socket.on('set name', async(name) => {
         try{
             const data = await checkPlayer(name);
@@ -171,10 +175,10 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', (reason) => {
         console.log('disconnected', reason);
-        if(reason !== "ping timeout"){
+        // if(reason !== "ping timeout"){
             removeSocket(thisSocket);
             thisSocket.emitAll();
-        }
+        // }
     })
 });
 

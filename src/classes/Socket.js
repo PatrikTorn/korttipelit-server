@@ -9,12 +9,18 @@ export default class Socket {
         this.money = 99999;
         this.name = null;
         this.fbId = null;
+        this.notificationToken = null;
         this.password = null;
         this.level = 1;
         this.experience = 0;
         this.uuid = null;
         this.gamesPlayed = 0;
-        this.highestHand = 0;
+        this.highestHand = {
+            hand:[],
+            rank:0,
+            name:null,
+            points:0
+        };
         this.games = [];
         this.tasks = [];
 
@@ -48,6 +54,7 @@ export default class Socket {
             },
             name:this.name,
             fbId:this.fbId,
+            notificationToken:this.notificationToken,
             password:this.password,
             uuid:this.uuid,
             id:this.id,
@@ -72,6 +79,11 @@ export default class Socket {
             cardTaken:this.cardTaken,
             isTurn: this.room.type === 'game' && this.room.turn.id === this.id
         }
+    }
+
+    setNotificationToken(token){
+        this.notificationToken = token;
+        this.persistPlayer();
     }
 
     getExp(){
@@ -118,11 +130,13 @@ export default class Socket {
         PlayerService.updatePlayer(this.getSelf())
     }
 
-    initPlayer({name, _id, fbId, password, money, gamesPlayed, highestHand, games, tasks, experience, level}){
+    initPlayer({name, _id, fbId, password, money, gamesPlayed, notificationToken,
+         highestHand, games, tasks, experience, level}){
         this.name = name;
         this.uuid = _id;
         this.password = password;
         this.fbId = fbId;
+        this.notificationToken = notificationToken;
         this.money = money;
         this.highestHand = highestHand;
         this.gamesPlayed = gamesPlayed;

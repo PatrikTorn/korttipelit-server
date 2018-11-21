@@ -15,6 +15,10 @@ const playerSchema = new mongoose.Schema({
         required:false,
         type:String
     },
+    notificationToken:{
+        required:false,
+        type:String
+    },
     money:{
         required:false,
         default:500,
