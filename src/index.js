@@ -52,7 +52,7 @@ io.on('connection', (socket) => {
         }
     })
 
-    socket.on('login', async({name, password, fbId}) => {
+    socket.on('login', async({name, password, fbId, notificationToken}) => {
         try{
             let data;
             if(fbId){
