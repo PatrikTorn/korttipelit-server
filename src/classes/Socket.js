@@ -83,7 +83,6 @@ export default class Socket {
 
     setNotificationToken(token){
         this.notificationToken = token;
-        this.persistPlayer();
     }
 
     getExp(){
