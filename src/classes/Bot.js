@@ -1,50 +1,40 @@
-import Socket from './Socket';
-import {botName} from '../gameTools'
-export default class Bot extends Socket{
-    constructor(socket, rooms){
-        super(socket, rooms);
-        this.id = socket.id;
-        this.type = "bot";
-        this.name = botName;
-        this.room = null;
-    }
+import Socket from "./Socket";
+import { botName } from "../gameTools";
+export default class Bot extends Socket {
+  constructor(socket, rooms) {
+    super(socket, rooms);
+    this.id = socket.id;
+    this.type = "bot";
+    this.name = botName;
+    this.room = null;
+  }
 
-    joinRoom(room){
-        this.room = room;
-        room.addPlayer(this, () => {
+  joinRoom(room) {
+    this.room = room;
+    room.addPlayer(this, () => {});
+  }
 
-        });
-    }
+  leaveRoom() {}
 
-    leaveRoom(){
+  changeCards() {}
 
-    }
+  // tableCard(){
+  // }
 
-    changeCards(){
+  exitGame() {
+    let { rooms } = require("../common");
+    delete rooms[this.room];
+  }
 
-    }
+  emitAll() {
+    this.emitSocket();
+    this.emitSockets();
+    this.emitRooms();
+  }
 
-    // tableCard(){
-    // }
+  emitSocket() {}
 
-    exitGame() {
-        let {rooms} = require('../common');
-        delete rooms[this.room]
-    }
+  emitGame(game = this.room.getSelf()) {}
 
-    emitAll(){
-        this.emitSocket();
-        this.emitSockets();
-        this.emitRooms();
-    }
-
-    emitSocket(){
-    }
-
-    emitGame(game = this.room.getSelf()){
-    }
-
-    
-    resetGame(){
-    }
+  resetGame() {}
 }

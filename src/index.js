@@ -1,181 +1,110 @@
-import {server, io, app} from './config';
-import {Socket, Queue} from './classes';
-import {sockets, rooms} from './common'
-import {checkPlayer, getPlayers, findPlayer, createPlayer, removeAll} from './services/PlayerService';
+import localtunnel from "localtunnel";
+import { Queue, Socket } from "./classes";
+import { rooms, sockets } from "./common";
+import { io, port, server } from "./config";
+import { AuthController } from "./controllers/authController";
+import { PaskahousuController } from "./controllers/paskahousuController";
+import { RoomController } from "./controllers/roomController";
+import { TikkipokeriController } from "./controllers/tikkipokeriController";
 
-const port = process.env.PORT || 4000;
-
-function addSocket(socket){
-    const sock = new Socket(socket, rooms);
-    sock.joinRoom(rooms.lobby, () => {
-        sock.emitAll();        
-    });
-    return sockets[socket.id] = sock;
+function createSocket(socket) {
+  console.log("New socket connected: #", Object.values(sockets).length + 1);
+  const sock = new Socket(socket, rooms);
+  sock.joinRoom(rooms.lobby, () => {
+    sock.emitAll();
+  });
+  return (sockets[socket.id] = sock);
 }
 
-function removeSocket(socket){
-    socket.leaveRoom();
-    delete sockets[socket.id];
+function removeSocket(socket) {
+  socket.leaveRoom();
+  delete sockets[socket.id];
 }
 
-app.get('/players', async(req, res) => {
-    const players = await getPlayers();
-    res.json(players)
+const ACTIONS = {
+  AUTH: {
+    SET_NAME: "set name",
+    LOGIN: "login",
+    REGISTER: "register",
+    SET_NOTIFICATION_TOKEN: "set notification token",
+  },
+  ROOM: {
+    JOIN_ROOM: "join room",
+    EXIT_GAME: "exit game",
+    CREATE_ROOM: "create room",
+    PLAY_OFFLINE: "play offline",
+  },
+  PASKAHOUSU: {
+    CLICK_CARD: "PH click card",
+    CHANGE_CARDS: "PH change cards",
+    TAKE_CARD: "PH take card",
+    TAKE_TABLE: "PH take table",
+  },
+  TIKKIPOKERI: {
+    CHANGE_CARDS: "change cards",
+    MISS_TURN: "miss turn",
+    SELECT_CARD: "select card",
+    TABLE_CARD: "table card",
+  },
+  RECONNECT_ATTEMPT: "reconnect_attempt",
+  DISCONNECT: "disconnect",
+  CONNECTION: "connection",
+};
+
+io.on(ACTIONS.CONNECTION, (socket) => {
+  let thisSocket = createSocket(socket);
+  const authController = new AuthController(thisSocket);
+  const roomController = new RoomController(thisSocket);
+  const paskahousuController = new PaskahousuController(thisSocket);
+  const tikkipokeriController = new TikkipokeriController(thisSocket);
+
+  // Auth emits
+  socket.on(ACTIONS.AUTH.SET_NAME, authController.setName);
+  socket.on(ACTIONS.AUTH.LOGIN, authController.login);
+  socket.on(ACTIONS.AUTH.REGISTER, authController.register);
+  socket.on(
+    ACTIONS.AUTH.SET_NOTIFICATION_TOKEN,
+    authController.setNotificationToken
+  );
+
+  // Room emits
+  socket.on(ACTIONS.ROOM.JOIN_ROOM, roomController.joinRoom);
+  socket.on(ACTIONS.ROOM.EXIT_GAME, roomController.exitGame);
+  socket.on(ACTIONS.ROOM.CREATE_ROOM, roomController.createRoom);
+  socket.on(ACTIONS.ROOM.PLAY_OFFLINE, roomController.playOffline);
+
+  // Paskahousu emits
+  socket.on(ACTIONS.PASKAHOUSU.CLICK_CARD, paskahousuController.clickCard);
+  socket.on(ACTIONS.PASKAHOUSU.CHANGE_CARDS, paskahousuController.changeCards);
+  socket.on(ACTIONS.PASKAHOUSU.TAKE_CARD, paskahousuController.takeCard);
+  socket.on(ACTIONS.PASKAHOUSU.TAKE_TABLE, paskahousuController.takeTable);
+
+  // Tikkipokeri emits
+  socket.on(ACTIONS.TIKKIPOKERI.MISS_TURN, tikkipokeriController.missTurn);
+  socket.on(ACTIONS.TIKKIPOKERI.SELECT_CARD, tikkipokeriController.selectCard);
+  socket.on(ACTIONS.TIKKIPOKERI.TABLE_CARD, tikkipokeriController.tableCard);
+  socket.on(
+    ACTIONS.TIKKIPOKERI.CHANGE_CARDS,
+    tikkipokeriController.changeCards
+  );
+
+  // Connection emits
+  socket.on(ACTIONS.RECONNECT_ATTEMPT, () => {
+    console.log("Reconnect attempt");
+    socket.io.opts.transports = ["polling", "websocket"];
+  });
+  socket.on(ACTIONS.DISCONNECT, (reason) => {
+    console.log("disconnected", reason);
+    removeSocket(thisSocket);
+    thisSocket.emitAll();
+  });
 });
 
-// middleware
-// io.use((socket, next) => {
-//     let token = socket.handshake.query.token;
-//     console.log(token);
-//     return next();
-    // if (isValid(token)) {
-    //   return next();
-    // }
-    // return next(new Error('authentication error'));
-// });
-
-
-io.on('connection', (socket) => {
-    let thisSocket = addSocket(socket);
-    console.log('connected', Object.values(sockets).length);
-    socket.on('set name', async(name) => {
-        try{
-            const data = await checkPlayer(name);
-            thisSocket.initPlayer(data);
-            thisSocket.emitAll();
-        }catch(e){
-            console.log(e);
-        }
-    })
-
-    socket.on('login', async({name, password, fbId}) => {
-        try{
-            let data;
-            if(fbId){
-                const foundUser = await findPlayer({fbId});
-                if(foundUser){
-                    data = foundUser;
-                }else{
-                    data = await createPlayer({name, fbId});
-                }
-            }else{
-                data = await findPlayer({name, password});
-            }
-            thisSocket.initPlayer(data);
-            thisSocket.emitAll();
-        }catch(e){
-            console.log(e);
-        }
-    });
-
-    socket.on('register', async({name, password}) => {
-        try{
-            const data = await createPlayer({name, password});
-            thisSocket.initPlayer(data);
-            thisSocket.emitAll();
-        }catch(e){
-            console.log(e);
-        }
-    });
-
-    // Not in use
-    socket.on('logout', () => {
-        removeSocket(thisSocket);
-        thisSocket.emitAll();
-    });
-
-    socket.on('join room', (roomName) => {
-        const newRoom = rooms[roomName];
-        thisSocket.joinRoom(newRoom, () => {
-            thisSocket.emitAll();
-        });
-    });
-
-    socket.on('exit game', () => {
-        thisSocket.exitGame();
-    });
-
-    socket.on('create room', ({id, name, playersAmount, bet, pointLimit, gameType}) => {
-        if(id in rooms){
-            thisSocket.joinRoom(rooms[id], () => {
-                thisSocket.emitRooms();
-                thisSocket.emitSocket();
-            });
-        }else{
-            rooms[id] = new Queue(id, name, {playersAmount, bet, pointLimit, gameType, createdByUser:true});
-            thisSocket.joinRoom(rooms[id], () => {
-                thisSocket.emitRooms();
-                thisSocket.emitSocket();
-            });
-        }
-
-    })
-
-    socket.on('play offline', () => {
-        thisSocket.room.playOffline();
-    });
-
-    // Paskahousu emits
-
-    socket.on('PH click card', (card) => {
-        thisSocket.room.PH_clickCard(card);
-    });
-
-    socket.on('PH change cards', (cards) => {
-        thisSocket.room.PH_changeCards(cards);
-    });
-
-    socket.on('PH take card', () => {
-        thisSocket.room.PH_takeCard();
-    });
-
-    socket.on('PH take table', () => {
-        thisSocket.room.giveTable(thisSocket);
-    });
-
-    socket.on('MM click card', (card) => {
-        thisSocket.room.clickCard(card);
-    });
-
-    socket.on('MM change cards', (cards) => {
-        thisSocket.room.changeCards(cards);
-    });
-
-    // Tikkipokeri emits
-
-    socket.on('change cards', (cards) => {
-        thisSocket.room.changeCards(cards);
-        thisSocket.room.setNextTurn();
-        thisSocket.broadcastGame();
-    });
-
-    socket.on('miss turn', () => {
-        thisSocket.room.moveBot(thisSocket);
-    })
-
-    socket.on('select card', (card) => {
-        thisSocket.room.selectCard(card);
-        thisSocket.emitGame();
-    });
-
-    socket.on('table card', (card) => {
-        thisSocket.tableCard(card);
-        thisSocket.room.setNextTurn();
-        thisSocket.broadcastGame();
-    });
-
-    socket.on('reconnect_attempt', () => {
-        console.log("Reconnect attempt")
-        socket.io.opts.transports = ['polling', 'websocket'];
-    });
-
-    socket.on('disconnect', (reason) => {
-        console.log('disconnected', reason);
-        if(reason !== "ping timeout"){
-            removeSocket(thisSocket);
-            thisSocket.emitAll();
-        }
-    })
+const LOCALTUNNEL_DOMAIN = "suomalaiset-korttipelit-server";
+server.listen(port, async () => {
+  console.log("Server listening on port", port);
+  if (!process.env.PORT) {
+    const tunnel = await localtunnel({ port, subdomain: LOCALTUNNEL_DOMAIN });
+    console.log("Localtunnel listening on url", tunnel.url);
+  }
 });
-
-server.listen(port, () => console.log('listening on port 4000'));

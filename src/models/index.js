@@ -1,1 +1,1 @@
-export {PlayerModel} from './PlayerModel';
+export { PlayerModel } from "./PlayerModel";

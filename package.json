@@ -4,7 +4,8 @@
   "description": "",
   "main": "start.js",
   "scripts": {
-    "start": "nodemon start.js"
+    "start": "nodemon start.js",
+    "tunnel": "lt --port 4000 --subdomain suomalaiset-korttipelit-mobile"
   },
   "keywords": [],
   "author": "",
@@ -14,12 +15,14 @@
     "babel-preset-env": "^1.7.0",
     "babel-register": "^6.26.0",
     "cors": "^2.8.4",
+    "dotenv": "^16.0.1",
     "esm": "^3.0.84",
     "express": "^4.16.4",
     "http": "^0.0.0",
+    "localtunnel": "^2.0.2",
     "mongoose": "^5.3.9",
     "nodemon": "^1.18.5",
     "pokersolver": "^2.1.2",
-    "socket.io": "^2.1.1"
+    "socket.io": "^4.5.1"
   }
 }
