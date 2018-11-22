@@ -71,7 +71,7 @@ export default class Socket {
             cardsChanged:this.cardsChanged,
             cardTabled:this.cardTabled,
             points:this.points,
-            hand:this.getHand().sort((a,b) => b.rank && a.rank && b.rank-a.rank),
+            hand:this.getHand(),
             firstTableCard:this.firstTableCard,
             shouldRevealHand:this.shouldRevealHand,
             gamesPlayed:this.gamesPlayed,
@@ -255,7 +255,7 @@ export default class Socket {
     }
 
     getHand(){
-        const hand = [...this.cards, ...this.table];
+        const hand = [...this.cards, ...this.table].sort((a,b) => b.rank - a.rank);
         this.hand = rankPokerHand(hand.map(card => card.cardNo));
         return {...this.hand, hand}
     }
