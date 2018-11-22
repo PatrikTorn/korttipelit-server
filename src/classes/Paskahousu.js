@@ -86,17 +86,36 @@ export default class Paskahousu extends Game {
         }
     }
 
+
     moveBot(bot){
         setTimeout(() => {
             const allowedCards = bot.cards.filter(c => c.enabled);
             if(allowedCards.length > 0){
-                this.PH_clickCard(allowedCards[0]);
-                if(bot.cards.filter(c => c.selected).length > 0){
-                    while(bot.cards.filter(c => c.enabled).every(c => c.selected === true)){
-                        this.PH_clickCard(bot.cards.filter(c => c.enabled).filter(c => !c.selected)[0]);
+                const bestSort = ["3","4","5","6", "7", "8", "9", "J", "Q", "K"];
+                const bestTrashSort = ["10", "A", "2"];
+                const bestSmallestCards = allowedCards
+                    .filter(card => bestSort.includes(card.value))
+                    .sort((a, b) => bestSort.indexOf(a.value) - bestSort.indexOf(b.value))
+                    .filter((card, index, self) => card.value === self[0].value)
+                const bestTrashCards = allowedCards
+                    .filter(c => bestTrashSort.includes(c.value))
+                    .sort((a,b) => bestTrashSort.indexOf(a.value) - bestTrashSort.indexOf(b.value))
+
+                // console.log('all', bot.cards.map(c => c.value));
+                // console.log('best', bestSmallestCards.map(c => c.value));
+                // console.log('trash', bestTrashCards.map(c => c.value));
+                if(bestSmallestCards.length > 0){
+                    this.PH_changeCards(bestSmallestCards);
+                }
+                else if(bestTrashCards.length > 0){
+                    const trashCard = bestTrashCards[0]
+                    if(trashCard === "2" && (this.table.length < 6 && this.cards.length > 0)){
+                        return this.giveTable(bot);
                     }
-                    const selectedCards = bot.cards.filter(c => c.selected);
-                    this.PH_changeCards(selectedCards);
+                    this.PH_clickCard(trashCard)
+                }
+                else{
+                    this.giveTable(bot);    
                 }
             }else{
                 this.giveTable(bot);

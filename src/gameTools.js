@@ -89,9 +89,18 @@ const hands = {
 export const botName = 'Bot-'+botNames[Math.floor(Math.random()*botNames.length)-1]
 
 function rankPokerHand(cards){
+    const values = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
     if(cards.length === 5){
         const hand = JSON.parse(JSON.stringify(PokerSolver.solve(cards)))
-        return {...hands[hand.rank], rank:hand.rank};    
+        const handHigh = hand.descr;
+        console.log(handHigh);
+        let rankCards = []; 
+        values.map(value => {
+            if(handHigh.includes(value)){
+                rankCards.push(value);
+            }
+        });
+        return {...hands[hand.rank], rank:hand.rank, rankCards};    
     }
 
     // const cs = cards.map(card => card.value);

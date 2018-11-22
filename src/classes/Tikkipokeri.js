@@ -200,14 +200,54 @@ export default class Tikkipokeri extends Game {
         }  
     }
 
+    getBotCardsToChange(bot){
+        // Set Joker card rank to biggest (Spade, Club 2)
+        const cards = bot.cards.map(card => ({
+            ...card, 
+            rank:(card.value === '2' && (card.land === 'S' || card.land === 'C'))
+                ? 14 : card.rank
+        }));
+        const hand = bot.getHand()
+        switch(hand.rank){
+            case 1: // Hai
+            case 2: // Pari
+            case 3: // Kaksi paria
+            case 4: // Kolmoset
+            case 8: // Neloset
+                return cards.filter(c => !(hand.rankCards.includes(c.value) || c.rank === 14));
+            default:
+                return null
+        }
+    }
+
+    getBotCardToTable(bot){
+        const allowedCards = bot.cards.filter(card => card.enabled);
+        if(allowedCards.every(c => c.land !== this.land)){
+            // Not same land with game
+            return allowedCards.sort((a,b) => a.rank - b.rank)[0]
+        }else{
+            const winningCards = allowedCards
+                .filter(card => card.land === this.land)
+                .filter(card => card.rank > this.leader.cardRank)
+                .sort((a,b) => a.rank - b.rank);
+            if(winningCards.length > 0){
+                return winningCards[0]
+            }else{
+                return allowedCards.sort((a,b) => a.rank - b.rank)[0]
+            }
+        }
+    }
+
     moveBot(bot){
         setTimeout(() => {
             if(!bot.cardsChanged){
+                const cardsToChange = this.getBotCardsToChange(bot);
+                cardsToChange && this.changeCards(cardsToChange);
+                console.log('new cards', bot.cards.map(c => c.value));
                 bot.cardsChanged = true;
             }else if(!bot.cardTabled){
-                    const firstCard = bot.cards
-                    .filter(card => card.enabled)[0]
-                    bot.tableCard(firstCard);
+                    const cardToTable = this.getBotCardToTable(bot);
+                    bot.tableCard(cardToTable);
             }
             this.setNextTurn();
             this.broadcastGame();
