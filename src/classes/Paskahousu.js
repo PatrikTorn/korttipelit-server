@@ -109,10 +109,11 @@ export default class Paskahousu extends Game {
                 }
                 else if(bestTrashCards.length > 0){
                     const trashCard = bestTrashCards[0]
-                    if(trashCard === "2" && (this.table.length < 6 && this.cards.length > 0)){
-                        return this.giveTable(bot);
+                    if(trashCard.value === "2" && (this.table.length < 6 && this.cards.length > 0)){
+                        this.giveTable(bot);
+                    }else{
+                        this.PH_clickCard(trashCard)
                     }
-                    this.PH_clickCard(trashCard)
                 }
                 else{
                     this.giveTable(bot);    
