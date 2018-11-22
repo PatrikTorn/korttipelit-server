@@ -4,7 +4,7 @@ import {Room, Queue} from './classes';
 let sockets = {};
 let rooms = {
     lobby: new Room("lobby", "Aula"),
-    "queue-2-paska": new Queue("queue-2-paska", "Paskahousu", {playersAmount:2, gameType:"paskahousu"}),
+    "queue-2-paska": new Queue("queue-2-paska", "Paskahousu", {playersAmount:6, gameType:"paskahousu"}),
     "queue-2": new Queue("queue-2", "Tikkipokeri", {playersAmount:6, bet:50, pointLimit:1, gameType:"tikkipokeri"}),
     "queue-2-mustamaija": new Queue("queue-2-mustamaija", "Mustamaija", {playersAmount:2, gameType:"mustamaija"}),
     // "queue-3": new Queue("queue-3", "Kolminpeli", 3, false),

@@ -93,7 +93,6 @@ function rankPokerHand(cards){
     if(cards.length === 5){
         const hand = JSON.parse(JSON.stringify(PokerSolver.solve(cards)))
         const handHigh = hand.descr;
-        console.log(handHigh);
         let rankCards = []; 
         values.map(value => {
             if(handHigh.includes(value)){

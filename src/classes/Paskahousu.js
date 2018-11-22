@@ -112,7 +112,10 @@ export default class Paskahousu extends Game {
                     if(trashCard.value === "2" && (this.table.length < 6 && this.cards.length > 0)){
                         this.giveTable(bot);
                     }else{
-                        this.PH_clickCard(trashCard)
+                        // while(trashCard.value !== "10" || trashCard.value !== "A"){
+                            this.PH_clickCard(trashCard);
+                        // }
+
                     }
                 }
                 else{
@@ -147,14 +150,22 @@ export default class Paskahousu extends Game {
     }
 
     PH_trashTable(card){
-        this.trashTable();
-        this.turn.enableCards();
-        this.turn.deleteCard(card);
-        this.turn.receiveCard(this.giveCard());
-        this.broadcastGame();
-        if(this.turn.type === 'bot'){
-            this.moveBot(this.turn);
+        if(this.table.length === 0 && this.players.length > 2){
+            this.trashTable();
+            this.getNextPlayer().receiveCard(this.turn.giveCard(card));
+            this.turn.receiveCard(this.giveCard());
+            this.broadcastGame();
+            this.setNextTurn();
+        }else{
+            this.turn.enableCards();
+            this.turn.deleteCard(card);
+            this.turn.receiveCard(this.giveCard());
+            this.broadcastGame();
+            if(this.turn.type === 'bot'){
+                this.moveBot(this.turn);
+            }
         }
+
     }
 
     PH_selectMultipleCards(card){
@@ -220,6 +231,7 @@ export default class Paskahousu extends Game {
         if(fourCardsSame){
             this.trashTable();
             this.broadcastGame();
+            this.turn.type === 'bot' && this.moveBot(this.turn);
         }else{
             this.setNextTurn();
         }
