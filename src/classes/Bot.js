@@ -1,11 +1,11 @@
 import Socket from "./Socket";
-import { botName } from "../gameTools";
+import { randomBotName } from "../tools/botTools";
 export default class Bot extends Socket {
   constructor(socket, rooms) {
     super(socket, rooms);
     this.id = socket.id;
     this.type = "bot";
-    this.name = botName;
+    this.name = randomBotName;
     this.room = null;
   }
 

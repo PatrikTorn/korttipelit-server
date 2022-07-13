@@ -2,7 +2,6 @@ import Room from "./Room";
 import Bot from "./Bot";
 import Tikkipokeri from "./Tikkipokeri";
 import Paskahousu from "./Paskahousu";
-import Mustamaija from "./Mustamaija";
 // import Tikkipokeri from './Tikkipokeri';
 
 export default class Queue extends Room {
@@ -64,14 +63,6 @@ export default class Queue extends Room {
     switch (this.config.gameType) {
       case "paskahousu":
         newGame = new Paskahousu(
-          gameId,
-          `Peli-${parseFloat(gameId, 3)}`,
-          this.players,
-          this.config
-        );
-        break;
-      case "mustamaija":
-        newGame = new Mustamaija(
           gameId,
           `Peli-${parseFloat(gameId, 3)}`,
           this.players,

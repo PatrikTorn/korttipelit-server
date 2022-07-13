@@ -1,5 +1,5 @@
 import { io } from "../config";
-import { rankPokerHand } from "../gameTools";
+import { rankPokerHand } from "../tools/tikkipokeriTools";
 import Card from "./Card";
 import Socket from "./Socket";
 import * as PlayerService from "../services/PlayerService";

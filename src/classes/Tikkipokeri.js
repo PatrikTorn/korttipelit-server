@@ -1,6 +1,6 @@
 import Game from "./Game";
 import Card from "./Card";
-import { getPokerWinner } from "../gameTools";
+import { getPokerWinner } from "../tools/tikkipokeriTools";
 
 export default class Tikkipokeri extends Game {
   constructor(id, name, players, config) {

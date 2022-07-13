@@ -1,7 +1,7 @@
 import Room from "./Room";
 import Card from "./Card";
 import { io } from "../config";
-import { getPokerWinner } from "../gameTools";
+import { getPokerWinner } from "../tools/tikkipokeriTools";
 
 export default class Game extends Room {
   constructor(id, name, players, playersAmount) {
