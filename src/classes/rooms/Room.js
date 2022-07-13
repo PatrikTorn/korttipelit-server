@@ -1,6 +1,13 @@
+export const RoomType = {
+  Lobby: "lobby",
+  Game: "game",
+  Paskahousu: "paskahousu",
+  Tikkipokeri: "tikkipokeri",
+  Queue: "queue",
+};
 export default class Room {
   constructor(id, name) {
-    this.type = "lobby";
+    this.type = RoomType.Lobby;
     this.id = id;
     this.name = name;
     this.players = [];

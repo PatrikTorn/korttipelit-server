@@ -1,5 +1,5 @@
-import { Queue } from "../classes";
-import { rooms, sockets } from "../common";
+import Queue from "../classes/rooms/Queue";
+import { rooms } from "../common";
 
 export class RoomController {
   constructor(socket) {

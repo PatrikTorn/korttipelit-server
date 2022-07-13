@@ -1,5 +1,5 @@
-import Room from "./Room";
-import Bot from "./Bot";
+import Room, { RoomType } from "./Room";
+import Bot from "../sockets/Bot";
 import Tikkipokeri from "./Tikkipokeri";
 import Paskahousu from "./Paskahousu";
 // import Tikkipokeri from './Tikkipokeri';
@@ -7,12 +7,12 @@ import Paskahousu from "./Paskahousu";
 export default class Queue extends Room {
   constructor(name, id, config) {
     super(name, id, config);
-    this.type = "queue";
+    this.type = RoomType.Queue;
     this.players = [];
     this.playersAmount = config.playersAmount;
     this.online = true;
     this.config = {
-      gameType: config.gameType || "paskahousu",
+      gameType: config.gameType || RoomType.Paskahousu,
       bet: config.bet || 50,
       playersAmount: config.playersAmount || 2,
       pointLimit: config.pointLimit || 1,
@@ -39,7 +39,7 @@ export default class Queue extends Room {
   }
 
   playOffline() {
-    let { rooms } = require("../common");
+    let { rooms } = require("../../common");
     while (this.players.length !== this.playersAmount) {
       const newBot = new Bot({ id: Math.random().toString() }, rooms);
       this.players.push(newBot);
@@ -48,7 +48,7 @@ export default class Queue extends Room {
   }
 
   removePlayer(player) {
-    let { rooms } = require("../common");
+    let { rooms } = require("../../common");
     if (this.players.length === 1 && this.config.createdByUser) {
       delete rooms[this.id];
     } else {
@@ -57,29 +57,12 @@ export default class Queue extends Room {
   }
 
   startGame() {
-    let { sockets } = require("../common");
     const gameId = Math.random();
-    let newGame;
+    const newGame = this.getNewGameByType();
     switch (this.config.gameType) {
-      case "paskahousu":
-        newGame = new Paskahousu(
-          gameId,
-          `Peli-${parseFloat(gameId, 3)}`,
-          this.players,
-          this.config
-        );
-        break;
-      default:
-        newGame = new Tikkipokeri(
-          gameId,
-          `Peli-${parseFloat(gameId, 3)}`,
-          this.players,
-          this.config
-        );
-        break;
     }
 
-    let { rooms } = require("../common");
+    let { rooms } = require("../../common");
     rooms[gameId] = newGame;
     this.players.map((player) => {
       player.joinRoom(newGame, () => {
@@ -89,5 +72,28 @@ export default class Queue extends Room {
     });
     this.config.createdByUser && delete rooms[this.id];
     this.players = [];
+  }
+
+  getNewGameByType() {
+    switch (this.config.gameType) {
+      case RoomType.Paskahousu:
+        return new Paskahousu(
+          gameId,
+          `Peli-${parseFloat(gameId, 3)}`,
+          this.players,
+          this.config
+        );
+      case RoomType.Tikkipokeri:
+        return new Tikkipokeri(
+          gameId,
+          `Peli-${parseFloat(gameId, 3)}`,
+          this.players,
+          this.config
+        );
+      default:
+        throw new Exception(
+          "No valid game type provided: #" + this.config.gameType
+        );
+    }
   }
 }

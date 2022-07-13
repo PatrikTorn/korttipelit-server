@@ -1,11 +1,13 @@
 import Game from "./Game";
-import Card from "./Card";
+import Card from "../Card";
+import { RoomType } from "./Room";
+import { SocketType } from "../sockets/Socket";
 
 export default class Paskahousu extends Game {
   constructor(id, name, players, config) {
     super(id, name, players, config);
     this.bet = config.bet;
-    this.gameType = "paskahousu";
+    this.gameType = RoomType.Paskahousu;
     this.playersAmount = config.playersAmount;
     this.turn = players[0];
     this.cards = [];
@@ -83,7 +85,7 @@ export default class Paskahousu extends Game {
     //     nextPlayer.enableCards();
     // }
     this.broadcastGame();
-    if (this.turn.type === "bot") {
+    if (this.turn.type === SocketType.Bot) {
       this.moveBot(this.turn);
     }
   }
@@ -164,7 +166,7 @@ export default class Paskahousu extends Game {
       this.turn.deleteCard(card);
       this.turn.receiveCard(this.giveCard());
       this.broadcastGame();
-      if (this.turn.type === "bot") {
+      if (this.turn.type === SocketType.Bot) {
         this.moveBot(this.turn);
       }
     }
@@ -234,7 +236,7 @@ export default class Paskahousu extends Game {
     if (fourCardsSame) {
       this.trashTable();
       this.broadcastGame();
-      this.turn.type === "bot" && this.moveBot(this.turn);
+      this.turn.type === SocketType.Bot && this.moveBot(this.turn);
     } else {
       this.setNextTurn();
     }

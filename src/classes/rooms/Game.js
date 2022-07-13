@@ -1,11 +1,13 @@
-import Room from "./Room";
-import Card from "./Card";
-import { io } from "../config";
+import Room, { RoomType } from "./Room";
+import Card from "../Card";
+import { io } from "../../config";
+import { CLIENT_ACTIONS } from "../../socketActions";
+import { SocketType } from "../sockets/Socket";
 
 export default class Game extends Room {
   constructor(id, name, players, playersAmount) {
     super(id, name, players, playersAmount);
-    this.type = "game";
+    this.type = RoomType.Game;
     this.playersAmount = playersAmount;
     this.cards = [];
     this.table = [];
@@ -58,12 +60,12 @@ export default class Game extends Room {
   }
 
   removePlayer(player) {
-    let { rooms } = require("../common");
+    let { rooms } = require("../../common");
     this.players = this.players.filter((p) => p.id !== player.id);
     if (this.playersCount() === 1) {
       this.players[0].exitGame();
       delete rooms[this.id];
-    } else if (this.players.every((p) => p.type === "bot")) {
+    } else if (this.players.every((p) => p.type === SocketType.Bot)) {
       delete rooms[this.id];
     } else {
       this.players.map((player) => {
@@ -121,6 +123,6 @@ export default class Game extends Room {
   }
 
   broadcastGame() {
-    io.sockets.in(this.id).emit("get game", this.getSelf());
+    io.sockets.in(this.id).emit(CLIENT_ACTIONS.GET_GAME, this.getSelf());
   }
 }

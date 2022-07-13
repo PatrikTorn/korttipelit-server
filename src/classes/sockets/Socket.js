@@ -1,6 +1,13 @@
-import { io } from "../config";
-import { rankPokerHand } from "../tools/tikkipokeriTools";
-import * as PlayerService from "../services/PlayerService";
+import { io } from "../../config";
+import { rankPokerHand } from "../../tools/tikkipokeriTools";
+import * as PlayerService from "../../services/PlayerService";
+import { CLIENT_ACTIONS } from "../../socketActions";
+import { RoomType } from "../rooms/Room";
+
+export const SocketType = {
+  Human: "human",
+  Bot: "bot",
+};
 
 export default class Socket {
   constructor(socket, rooms, data) {
@@ -28,7 +35,7 @@ export default class Socket {
     this.id = this.socket.id;
 
     // config
-    this.type = "human";
+    this.type = SocketType.Human;
     this.room = rooms.lobby;
     this.rooms = rooms;
 
@@ -76,7 +83,7 @@ export default class Socket {
       gamesPlayed: this.gamesPlayed,
       highestHand: this.highestHand,
       cardTaken: this.cardTaken,
-      isTurn: this.room.type === "game" && this.room.turn.id === this.id,
+      isTurn: this.room.type === RoomType.Game && this.room.turn.id === this.id,
     };
   }
 
@@ -224,7 +231,7 @@ export default class Socket {
   }
 
   setStats() {
-    if (this.room.gameType === "tikkipokeri") {
+    if (this.room.gameType === RoomType.Tikkipokeri) {
       if (this.getHand().rank > this.highestHand.rank) {
         this.highestHand = this.getHand();
       }
@@ -305,15 +312,15 @@ export default class Socket {
   }
 
   emitSocket() {
-    this.socket.emit("get socket", this.getSelf());
+    this.socket.emit(CLIENT_ACTIONS.GET_SOCKET, this.getSelf());
   }
 
   emitGame(game = this.room.getSelf()) {
-    this.socket.emit("get game", game);
+    this.socket.emit(CLIENT_ACTIONS.GET_GAME, game);
   }
 
   resetGame() {
-    this.socket.emit("reset game");
+    this.socket.emit(CLIENT_ACTIONS.RESET_GAME);
   }
 
   emitSockets() {
@@ -321,10 +328,12 @@ export default class Socket {
   }
 
   emitRooms() {
-    io.sockets.emit("get rooms", this.getRooms());
+    io.sockets.emit(CLIENT_ACTIONS.GET_ROOMS, this.getRooms());
   }
 
   broadcastGame() {
-    io.sockets.in(this.room.id).emit("get game", this.room.getSelf());
+    io.sockets
+      .in(this.room.id)
+      .emit(CLIENT_ACTIONS.GET_GAME, this.room.getSelf());
   }
 }

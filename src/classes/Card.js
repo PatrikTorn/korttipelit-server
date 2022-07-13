@@ -1,4 +1,3 @@
-// const lands = ["heart", "diamond", "club", "spade"];
 const lands = ["S", "C", "H", "D"];
 const landUnicodes = ["♠", "♣", "♥", "♦"];
 const values = [

@@ -1,15 +1,21 @@
-import Room from "./Room";
-import Card from "./Card";
-import { io } from "../config";
-import { getPokerWinner } from "../tools/tikkipokeriTools";
+import Game from "./Game";
+import Card from "../Card";
+import { getPokerWinner } from "../../tools/tikkipokeriTools";
+import { SocketType } from "../sockets/Socket";
+import { RoomType } from "./Room";
 
-export default class Game extends Room {
-  constructor(id, name, players, playersAmount) {
-    super(id, name, players, playersAmount);
-    this.type = "game";
-    this.playersAmount = playersAmount;
+export default class Tikkipokeri extends Game {
+  constructor(id, name, players, config) {
+    super(id, name, players);
+    this.gameType = RoomType.Tikkipokeri;
+    // this.playersAmount = playersAmount;
+
+    this.pointLimit = config.pointLimit;
+    this.bet = config.bet;
+    this.playersAmount = config.playersAmount;
+
     this.cards = [];
-    this.turn = players[0].id;
+    this.turn = players[0];
     this.shuffleDeck();
     this.land = null;
     this.leader = {
@@ -20,47 +26,51 @@ export default class Game extends Room {
     this.tikkiRoundWinner = null;
     this.tikkiWinner = null;
     this.pokerWinner = null;
-    this.pointLimit = 1;
-    this.bet = 50;
     this.gameWinner = null;
     this.moneyExchange = null;
-    this.setTimer();
+    this.gameLeader = players[0];
   }
 
-  getRoom() {
+  getSelf() {
     return {
       id: this.id,
       name: this.name,
       type: this.type,
-      deck: this.deck,
-      trash: this.trash,
+      gameType: this.gameType,
       cards: this.cards,
+      bet: this.bet,
+      pointLimit: this.pointLimit,
       players: this.formatPlayers(),
-      turn: this.turn,
+      turn: this.turn.id,
       land: this.land,
       tikkiStarted: this.tikkiStarted,
       tikkiRoundWinner: this.tikkiRoundWinner,
       tikkiWinner: this.tikkiWinner && this.tikkiWinner.getSelf(),
       pokerWinner: this.pokerWinner && this.pokerWinner.getSelf(),
       gameWinner: this.gameWinner,
-      moneyExchange: this.moneyExchange,
+      moneyExchange: this.getMoneyExchange(),
+      gameLeader: {},
       timer: this.timer,
     };
   }
 
-  setTimer() {
-    this.duration = 10000;
-    this.timer = {
-      turnEnds: new Date().getTime() + this.duration,
-      duration: this.duration,
-    };
+  selectCard(card) {
+    const thisCard = this.turn.findCard(card);
+    thisCard.selected = !thisCard.selected;
+  }
+
+  changeCards(cards) {
+    (cards || []).map((card) => {
+      const newCard = new Card(card.landId, card.rank);
+      this.turn.giveCard(newCard);
+      this.turn.receiveCard(this.giveCard());
+    });
+    this.turn.cardsChanged = true;
   }
 
   revealHands() {
     this.players.map((player) => {
-      // setTimeout(() => {
       player.revealHand();
-      // }, i * 5000)
     });
   }
 
@@ -69,14 +79,6 @@ export default class Game extends Room {
       player.hideHand();
     });
     this.broadcastGame();
-  }
-
-  findCard(card) {
-    return this.cards.find((c) => c.id === card.id);
-  }
-
-  deleteCard(card) {
-    this.cards = this.cards.filter((c) => c.id !== card.id);
   }
 
   setLand(land) {
@@ -102,18 +104,6 @@ export default class Game extends Room {
     }
   }
 
-  getNextPlayer() {
-    const playerId = this.turn;
-    const thisPlayers = this.players.map((player) => player.id);
-    const thisIndex = thisPlayers.indexOf(playerId);
-    this.setTimer();
-    if (playerId === thisPlayers[thisPlayers.length - 1]) {
-      return thisPlayers[0];
-    } else {
-      return thisPlayers[thisIndex + 1];
-    }
-  }
-
   getWinner() {
     this.tikkiWinner = this.players.find(
       (player) => player.id === this.leader.playerId
@@ -129,7 +119,6 @@ export default class Game extends Room {
   }
 
   resetGame() {
-    const tikkiWinner = this.tikkiWinner;
     this.tikkiStarted = false;
     this.tikkiRoundWinner = null;
     this.tikkiWinner = null;
@@ -139,24 +128,34 @@ export default class Game extends Room {
     this.shuffleDeck();
     this.deal();
     while (
-      this.players.find((player) => player.id === this.turn).type !== "human"
+      this.players.find((player) => player.id === this.turn.id).type !==
+      SocketType.Human
     ) {
       this.turn = this.getNextPlayer();
     }
     this.broadcastGame();
   }
 
+  getGameLeader() {
+    return this.players.sort((a, b) => b.points - a.points)[0];
+  }
+
+  getMoneyExchange() {
+    return this.players.map((player) => ({
+      name: player.name,
+      money: (this.getGameLeader().points - player.points) * this.bet,
+      points: player.points,
+    }));
+  }
+
   finishGame() {
-    const winner = this.players.sort((a, b) => b.points - a.points)[0];
+    const winner = this.getGameLeader();
+    this.gameWinner = winner.getSelf();
+    this.moneyExchange = this.getMoneyExchange();
     this.players.map((player) => {
       winner.earnMoney(player);
       player.setStats();
     });
-    this.gameWinner = winner.getSelf();
-    this.moneyExchange = this.players.map((player) => ({
-      ...player.getSelf(),
-      money: (winner.points - player.points) * this.bet,
-    }));
     this.broadcastGame();
 
     setTimeout(() => {
@@ -164,19 +163,6 @@ export default class Game extends Room {
         player.exitGame();
       });
     }, 5000);
-  }
-
-  removePlayer(player) {
-    let { rooms } = require("../common");
-    this.players = this.players.filter((p) => p.id !== player.id);
-    if (this.playersCount() === 1) {
-      this.players[0].exitGame();
-      delete rooms[this.id];
-    } else {
-      this.players.map((player) => {
-        player.emitGame();
-      });
-    }
   }
 
   setNextTurn() {
@@ -199,7 +185,8 @@ export default class Game extends Room {
           this.resetGame();
         }, 5000);
       }
-      this.turn = this.leader.playerId;
+      this.turn = this.findPlayer(this.leader.playerId);
+
       this.setTimer();
       this.tikkiRoundWinner = this.leader.playerId;
       this.setLand(null);
@@ -211,19 +198,63 @@ export default class Game extends Room {
     } else {
       if (cardsChanged && !cardsTabled) {
         this.tikkiStarted = true;
-        if (this.turn === this.tikkiRoundWinner) {
+        if (
+          this.tikkiRoundWinner &&
+          this.turn.id === this.findPlayer(this.tikkiRoundWinner).id
+        ) {
           this.players
-            .filter((player) => player.id !== this.turn)
+            .filter((player) => player.id !== this.turn.id)
             .map((player) => player.tableCard(null));
         }
       }
       this.turn = this.getNextPlayer();
     }
-
-    const nextPlayer = this.players.find((player) => player.id === this.turn);
-    const isBotTurn = nextPlayer.type === "bot";
+    // const nextPlayer = this.findPlayer(this.turn.id)
+    const isBotTurn = this.turn.type === SocketType.Bot;
     if (isBotTurn && !cardsEnded) {
-      this.moveBot(nextPlayer);
+      this.moveBot(this.turn);
+    }
+  }
+
+  getBotCardsToChange(bot) {
+    // Set Joker card rank to biggest (Spade, Club 2)
+    const cards = bot.cards.map((card) => ({
+      ...card,
+      rank:
+        card.value === "2" && (card.land === "S" || card.land === "C")
+          ? 14
+          : card.rank,
+    }));
+    const hand = bot.getHand();
+    switch (hand.rank) {
+      case 1: // Hai
+      case 2: // Pari
+      case 3: // Kaksi paria
+      case 4: // Kolmoset
+      case 8: // Neloset
+        return cards.filter(
+          (c) => !(hand.rankCards.includes(c.value) || c.rank === 14)
+        );
+      default:
+        return null;
+    }
+  }
+
+  getBotCardToTable(bot) {
+    const allowedCards = bot.cards.filter((card) => card.enabled);
+    if (allowedCards.every((c) => c.land !== this.land)) {
+      // Not same land with game
+      return allowedCards.sort((a, b) => a.rank - b.rank)[0];
+    } else {
+      const winningCards = allowedCards
+        .filter((card) => card.land === this.land)
+        .filter((card) => card.rank > this.leader.cardRank)
+        .sort((a, b) => a.rank - b.rank);
+      if (winningCards.length > 0) {
+        return winningCards[0];
+      } else {
+        return allowedCards.sort((a, b) => a.rank - b.rank)[0];
+      }
     }
   }
 
@@ -231,63 +262,17 @@ export default class Game extends Room {
     setTimeout(
       () => {
         if (!bot.cardsChanged) {
+          const cardsToChange = this.getBotCardsToChange(bot);
+          cardsToChange && this.changeCards(cardsToChange);
           bot.cardsChanged = true;
         } else if (!bot.cardTabled) {
-          const firstCard = bot.cards.filter((card) => card.enabled)[0];
-          bot.tableCard(firstCard);
+          const cardToTable = this.getBotCardToTable(bot);
+          bot.tableCard(cardToTable);
         }
         this.setNextTurn();
         this.broadcastGame();
       },
-      bot.type === "bot" ? 2500 : 0
+      bot.type === SocketType.Bot ? 2500 : 0
     );
-  }
-
-  addPlayer(player, cb) {
-    this.players.push(player);
-    cb();
-    if (this.playersCount() === this.playersAmount) {
-      this.deal();
-      this.broadcastGame();
-    }
-  }
-
-  giveCard() {
-    if (this.cards.length > 0) {
-      const givenCard = this.cards[0];
-      this.deleteCard(givenCard);
-      return givenCard;
-    } else {
-      return {};
-    }
-  }
-
-  shuffleDeck() {
-    const deck = [];
-    // Create deck
-    for (let land = 0; land < 4; land++) {
-      for (let i = 0; i < 13; i++) {
-        deck.push(new Card(land, i));
-      }
-    }
-
-    // Shuffle
-    for (let i = deck.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [deck[i], deck[j]] = [deck[j], deck[i]];
-    }
-    this.cards = deck;
-  }
-
-  deal() {
-    this.players.map((player) => {
-      for (let i = 0; i < 5; i++) {
-        player.receiveCard(this.giveCard());
-      }
-    });
-  }
-
-  broadcastGame() {
-    io.sockets.in(this.id).emit("get game", this.getRoom());
   }
 }

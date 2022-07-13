@@ -10,10 +10,6 @@ export class TikkipokeriController {
     this.socket.broadcastGame();
   };
 
-  missTurn = () => {
-    this.socket.room.moveBot(this.socket);
-  };
-
   selectCard = (card) => {
     this.socket.room.selectCard(card);
     this.socket.emitGame();
