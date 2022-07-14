@@ -39,15 +39,16 @@ export class AuthController {
     }
   };
 
-  async register({ name, password }) {
+  register = async ({ name, password }) => {
     try {
       const data = await createPlayer({ name, password });
       this.socket.initPlayer(data);
       this.socket.emitAll();
+      console.log("Registered player", data);
     } catch (e) {
       console.log("Failed to register", e);
     }
-  }
+  };
 
   setNotificationToken = (token) => {
     this.socket.setNotificationToken(token);

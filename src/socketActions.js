@@ -33,7 +33,7 @@ export const ACTIONS = {
 export const CLIENT_ACTIONS = {
   GET_GAME: "get game",
   GET_SOCKET: "get socket",
-  GET_SOCKET: "get sockets",
+  GET_SOCKETS: "get sockets",
   RESET_GAME: "reset game",
   GET_ROOMS: "get rooms",
   DISCONNECT: "disconnect",
